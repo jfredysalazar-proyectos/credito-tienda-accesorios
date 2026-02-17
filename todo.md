@@ -67,3 +67,5 @@
 ### Correcciones Pendientes
 - [x] Corregir menú de navegación lateral (mostrar opciones correctas en lugar de Page 1, Page 2)
 - [x] Corregir error 404 después del login (redireccionamiento a ruta incorrecta)
+
+- [x] Corregir error React #321 al crear crédito y registrar abono
