@@ -89,6 +89,19 @@ export default function ClientDetail() {
     },
   });
 
+  const createGeneralPaymentMutation = trpc.payments.createGeneral.useMutation({
+    onSuccess: () => {
+      toast.success("Pago general registrado exitosamente");
+      setIsGeneralPaymentOpen(false);
+      setGeneralPaymentAmount("");
+      void utils.credits.getByClientId.invalidate({ clientId });
+      void utils.clients.getById.invalidate({ clientId });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al registrar el pago general");
+    },
+  });
+
   if (clientLoading || creditsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -213,7 +226,7 @@ export default function ClientDetail() {
             </DialogHeader>
             <NewCreditForm
               clientId={clientId}
-              onSubmit={(data) => {
+              onSubmit={(data: any) => {
                 createCreditMutation.mutate({
                   clientId,
                   ...data,
@@ -232,6 +245,69 @@ export default function ClientDetail() {
           <Send className="mr-2 h-4 w-4" />
           Enviar Estado de Cuenta
         </Button>
+
+        <Dialog open={isGeneralPaymentOpen} onOpenChange={setIsGeneralPaymentOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" disabled={totalBalance === 0}>
+              <Plus className="mr-2 h-4 w-4" />
+              Pago General a Deuda
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Pago General a Deuda</DialogTitle>
+              <DialogDescription>
+                Registra un pago que se distribuirá automáticamente entre los créditos activos
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Deuda Total</Label>
+                <div className="text-2xl font-bold text-red-600 mt-2">
+                  ${totalBalance.toLocaleString("es-CO")}
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="general-amount">Monto del Pago</Label>
+                <Input
+                  id="general-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={generalPaymentAmount}
+                  onChange={(e) => setGeneralPaymentAmount(e.target.value)}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+              <Button
+                onClick={() => {
+                  const amount = parseFloat(generalPaymentAmount);
+                  if (isNaN(amount) || amount <= 0) {
+                    toast.error("Ingresa un monto válido");
+                    return;
+                  }
+                  if (amount > totalBalance) {
+                    toast.error("El monto no puede ser mayor a la deuda total");
+                    return;
+                  }
+                  createGeneralPaymentMutation.mutate({
+                    clientId,
+                    amount,
+                  });
+                }}
+                disabled={createGeneralPaymentMutation.isPending}
+                className="w-full"
+              >
+                {createGeneralPaymentMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
+                Registrar Pago
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Credits Table */}
@@ -252,6 +328,7 @@ export default function ClientDetail() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead></TableHead>
                     <TableHead>Concepto</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Saldo</TableHead>
@@ -262,77 +339,100 @@ export default function ClientDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {credits.map((credit) => (
-                    <TableRow key={credit.id}>
-                      <TableCell className="font-medium">{credit.concept}</TableCell>
-                      <TableCell>${Number(credit.amount).toLocaleString("es-CO")}</TableCell>
-                      <TableCell>${Number(credit.balance).toLocaleString("es-CO")}</TableCell>
-                      <TableCell>
-                        {credit.createdAt
-                          ? new Date(credit.createdAt).toLocaleDateString("es-CO")
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {credit.dueDate
-                          ? new Date(credit.dueDate).toLocaleDateString("es-CO")
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            credit.status === "active"
-                              ? "bg-blue-100 text-blue-800"
+                  {credits.map((credit) => {
+                    const isExpanded = expandedCredits.has(credit.id);
+                    return (
+                      <TableRow key={credit.id}>
+                        <TableCell>
+                          <button
+                            onClick={() => {
+                              const newExpanded = new Set(expandedCredits);
+                              if (isExpanded) {
+                                newExpanded.delete(credit.id);
+                              } else {
+                                newExpanded.add(credit.id);
+                              }
+                              setExpandedCredits(newExpanded);
+                            }}
+                            className="p-1"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+                        </TableCell>
+                        <TableCell className="font-medium">{credit.concept}</TableCell>
+                        <TableCell>${Number(credit.amount).toLocaleString("es-CO")}</TableCell>
+                        <TableCell>${Number(credit.balance).toLocaleString("es-CO")}</TableCell>
+                        <TableCell>
+                          {credit.createdAt
+                            ? new Date(credit.createdAt).toLocaleDateString("es-CO")
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {credit.dueDate
+                            ? new Date(credit.dueDate).toLocaleDateString("es-CO")
+                            : "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              credit.status === "active"
+                                ? "bg-blue-100 text-blue-800"
+                                : credit.status === "paid"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {credit.status === "active"
+                              ? "Activo"
                               : credit.status === "paid"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {credit.status === "active"
-                            ? "Activo"
-                            : credit.status === "paid"
-                            ? "Pagado"
-                            : "Vencido"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {credit.status === "active" && (
-                          <Dialog open={isPaymentOpen && selectedCreditId === credit.id} onOpenChange={(open) => {
-                            setIsPaymentOpen(open);
-                            if (!open) setSelectedCreditId(null);
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setSelectedCreditId(credit.id)}
-                              >
-                                Registrar Pago
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Registrar Pago</DialogTitle>
-                                <DialogDescription>
-                                  Registra un pago para {credit.concept}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <PaymentForm
-                                creditId={credit.id}
-                                balance={Number(credit.balance)}
-                                onSubmit={(data) => {
-                                  createPaymentMutation.mutate({
-                                    creditId: credit.id,
-                                    ...data,
-                                  });
-                                }}
-                                isLoading={createPaymentMutation.isPending}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              ? "Pagado"
+                              : "Vencido"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {credit.status === "active" && (
+                            <Dialog open={isPaymentOpen && selectedCreditId === credit.id} onOpenChange={(open) => {
+                              setIsPaymentOpen(open);
+                              if (!open) setSelectedCreditId(null);
+                            }}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelectedCreditId(credit.id)}
+                                >
+                                  Pagar
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Registrar Pago</DialogTitle>
+                                  <DialogDescription>
+                                    Registra un pago para {credit.concept}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <PaymentForm
+                                  creditId={credit.id}
+                                  balance={Number(credit.balance)}
+                                  onSubmit={(data: any) => {
+                                    createPaymentMutation.mutate({
+                                      creditId: credit.id,
+                                      ...data,
+                                    });
+                                  }}
+                                  isLoading={createPaymentMutation.isPending}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -343,42 +443,20 @@ export default function ClientDetail() {
   );
 }
 
-function NewCreditForm({
-  clientId,
-  onSubmit,
-  isLoading,
-}: {
-  clientId: number;
-  onSubmit: (data: { concept: string; amount: string; creditDays: number }) => void;
-  isLoading: boolean;
-}) {
+function NewCreditForm({ clientId, onSubmit, isLoading }: any) {
   const [concept, setConcept] = useState("");
   const [amount, setAmount] = useState("");
   const [creditDays, setCreditDays] = useState("0");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!concept || !amount) {
-      toast.error("Por favor completa todos los campos");
-      return;
-    }
-    onSubmit({
-      concept,
-      amount,
-      creditDays: parseInt(creditDays),
-    });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div>
         <Label htmlFor="concept">Concepto</Label>
         <Input
           id="concept"
-          placeholder="Ej: Procesador Intel i7"
+          placeholder="Ej: Teclado mecánico"
           value={concept}
           onChange={(e) => setConcept(e.target.value)}
-          disabled={isLoading}
         />
       </div>
       <div>
@@ -386,10 +464,11 @@ function NewCreditForm({
         <Input
           id="amount"
           type="number"
-          placeholder="Ej: 500000"
+          placeholder="0.00"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          disabled={isLoading}
+          step="0.01"
+          min="0"
         />
       </div>
       <div>
@@ -397,102 +476,94 @@ function NewCreditForm({
         <Input
           id="creditDays"
           type="number"
-          placeholder="Ej: 30"
+          placeholder="30"
           value={creditDays}
           onChange={(e) => setCreditDays(e.target.value)}
-          disabled={isLoading}
+          min="0"
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      <Button
+        onClick={() => {
+          onSubmit({
+            concept,
+            amount,
+            creditDays: parseInt(creditDays) || 0,
+          });
+        }}
+        disabled={isLoading || !concept || !amount}
+        className="w-full"
+      >
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
         Registrar Crédito
       </Button>
-    </form>
+    </div>
   );
 }
 
-function PaymentForm({
-  creditId,
-  balance,
-  onSubmit,
-  isLoading,
-}: {
-  creditId: number;
-  balance: number;
-  onSubmit: (data: { amount: string; paymentMethod: string; notes?: string }) => void;
-  isLoading: boolean;
-}) {
+function PaymentForm({ creditId, balance, onSubmit, isLoading }: any) {
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
   const [notes, setNotes] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !paymentMethod) {
-      toast.error("Por favor completa todos los campos");
-      return;
-    }
-    const paymentAmount = parseFloat(amount);
-    if (paymentAmount > balance) {
-      toast.error(`El monto no puede ser mayor al saldo (${balance})`);
-      return;
-    }
-    onSubmit({
-      amount,
-      paymentMethod,
-      notes: notes || undefined,
-    });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div>
-        <Label htmlFor="amount">Monto a Pagar</Label>
-        <div className="text-sm text-muted-foreground mb-2">
-          Saldo pendiente: ${balance.toLocaleString("es-CO")}
+        <Label>Saldo Pendiente</Label>
+        <div className="text-2xl font-bold text-red-600 mt-2">
+          ${balance.toLocaleString("es-CO")}
         </div>
+      </div>
+      <div>
+        <Label htmlFor="amount">Monto del Pago</Label>
         <Input
           id="amount"
           type="number"
-          placeholder={`Máximo: ${balance}`}
+          placeholder="0.00"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          disabled={isLoading}
+          step="0.01"
+          min="0"
+          max={balance}
         />
       </div>
       <div>
-        <Label htmlFor="paymentMethod">Método de Pago</Label>
-        <select
-          id="paymentMethod"
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value)}
-          disabled={isLoading}
-          className="w-full px-3 py-2 border border-input rounded-md bg-background"
-        >
-          <option value="efectivo">Efectivo</option>
-          <option value="transferencia">Transferencia</option>
-          <option value="cheque">Cheque</option>
-          <option value="otro">Otro</option>
-        </select>
+        <Label htmlFor="method">Método de Pago</Label>
+        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="efectivo">Efectivo</SelectItem>
+            <SelectItem value="transferencia">Transferencia</SelectItem>
+            <SelectItem value="cheque">Cheque</SelectItem>
+            <SelectItem value="otro">Otro</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <Label htmlFor="notes">Notas (Opcional)</Label>
         <Textarea
           id="notes"
-          placeholder="Ej: Referencia de transferencia"
+          placeholder="Ej: Pago parcial"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          disabled={isLoading}
+          rows={3}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+      <Button
+        onClick={() => {
+          onSubmit({
+            amount,
+            paymentMethod,
+            notes: notes || undefined,
+          });
+        }}
+        disabled={isLoading || !amount}
+        className="w-full"
+      >
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
         Registrar Pago
       </Button>
-    </form>
+    </div>
   );
 }
-
-
-  // Agregar después de sendStatementMutation:
-  // const createGeneralPaymentMutation = trpc.payments.createGeneral.useMutation({...});
