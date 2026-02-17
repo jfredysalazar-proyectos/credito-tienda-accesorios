@@ -24,6 +24,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
 import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
+// Updated: 2026-02-17 - Force Railway redeploy
 
 export const appRouter = router({
   system: systemRouter,

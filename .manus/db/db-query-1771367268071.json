@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET passwordHash = 'c1e146ae704ee4c66d7a92696be1d553:c2991061c0b2ebbc4ba826b277c30cdaacef0cb8e5091186ab75f987f4284dbabe088bbd1a8471d8398ef0be865b4ace56d2061c97c3821999995ebe3a3b67b8' WHERE email = 'admin@creditotienda.local';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 39APTXvo4uMgQep.root --database DeEuadowf9qAwz5LwVE6pc --execute UPDATE users SET passwordHash = 'c1e146ae704ee4c66d7a92696be1d553:c2991061c0b2ebbc4ba826b277c30cdaacef0cb8e5091186ab75f987f4284dbabe088bbd1a8471d8398ef0be865b4ace56d2061c97c3821999995ebe3a3b67b8' WHERE email = 'admin@creditotienda.local';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 353
+}

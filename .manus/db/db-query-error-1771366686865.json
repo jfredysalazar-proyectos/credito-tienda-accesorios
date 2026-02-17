@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE users SET password_hash = '88e97874bb2c611d708ebbd2408fa794:1dbcc309dc9de753325973ab67905c27d56a6a558efdac5d4fbc4916ce1f9ba80c55119a40f2b44395cea4174555d8329ba146fa88ed9092c06147ab0aa26526' WHERE email = 'admin@creditotienda.local';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 39APTXvo4uMgQep.root --database DeEuadowf9qAwz5LwVE6pc --execute UPDATE users SET password_hash = '88e97874bb2c611d708ebbd2408fa794:1dbcc309dc9de753325973ab67905c27d56a6a558efdac5d4fbc4916ce1f9ba80c55119a40f2b44395cea4174555d8329ba146fa88ed9092c06147ab0aa26526' WHERE email = 'admin@creditotienda.local';",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'password_hash' in 'field list'"
+  ]
+}
