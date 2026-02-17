@@ -41,9 +41,9 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <CreditCard className="w-8 h-8 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">CréditoTienda</h1>
+        <div className="flex items-center justify-center gap-2 mb-6 sm:mb-8">
+          <CreditCard className="w-6 sm:w-8 h-6 sm:h-8 text-blue-600" />
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">CréditoTienda</h1>
         </div>
 
         {/* Login Card */}
@@ -55,7 +55,7 @@ export default function Login() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input

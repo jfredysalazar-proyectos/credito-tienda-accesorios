@@ -83,7 +83,16 @@
 
 
 ## Nuevas Mejoras Solicitadas
-- [ ] Implementar historial de pagos expandible en tabla de créditos
-- [ ] Agregar opción de pago general a la deuda del cliente
-- [ ] Distribuir pagos generales entre créditos activos automáticamente
-- [ ] Registrar todos los pagos con fecha exacta
+- [x] Implementar historial de pagos expandible en tabla de créditos
+- [x] Agregar opción de pago general a la deuda del cliente
+- [x] Distribuir pagos generales entre créditos activos automáticamente
+- [x] Registrar todos los pagos con fecha exacta
+
+## Optimización Responsive para Móvil
+- [x] Ajustar layouts para pantallas pequeñas (< 640px)
+- [x] Optimizar tablas para visualización móvil
+- [x] Ajustar tamaños de botones y espacios
+- [x] Hacer responsive los diálogos modales
+- [x] Optimizar formularios para móvil
+- [x] Ajustar navegación lateral para móvil
+- [ ] Probar en dispositivos reales

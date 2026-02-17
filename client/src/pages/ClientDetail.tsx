@@ -130,21 +130,21 @@ export default function ClientDetail() {
   const availableCredit = Number(client.creditLimit) - totalBalance;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="sm" onClick={() => setLocation("/clientes")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{client.name}</h1>
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight">{client.name}</h1>
             <p className="text-muted-foreground mt-1">Cédula: {client.cedula}</p>
           </div>
         </div>
       </div>
 
       {/* Client Info Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Cupo Total</CardTitle>
@@ -189,7 +189,7 @@ export default function ClientDetail() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap flex-col sm:flex-row">
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
@@ -248,7 +248,7 @@ export default function ClientDetail() {
 
         <Dialog open={isGeneralPaymentOpen} onOpenChange={setIsGeneralPaymentOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" disabled={totalBalance === 0}>
+            <Button variant="outline" disabled={totalBalance === 0} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Pago General a Deuda
             </Button>
