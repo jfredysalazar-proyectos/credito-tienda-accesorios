@@ -62,3 +62,7 @@
 - [x] Crear usuario administrador por defecto (admin/admin123)
 - [x] Implementar logout
 - [x] Agregar validación de sesión en todas las rutas protegidas
+
+
+## Correcciones Pendientes
+- [x] Corregir menú de navegación lateral (mostrar opciones correctas en lugar de Page 1, Page 2)
