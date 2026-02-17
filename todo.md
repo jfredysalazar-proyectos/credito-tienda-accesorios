@@ -78,3 +78,5 @@
 - [x] Agregar edición de clientes con formulario modal
 - [x] Crear reportes exportables en PDF
 - [ ] Implementar alertas de vencimiento por WhatsApp
+
+- [x] Agregar fecha de creación del crédito en tabla de Créditos Registrados

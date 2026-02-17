@@ -251,6 +251,7 @@ export default function ClientDetail() {
                     <TableHead>Concepto</TableHead>
                     <TableHead>Monto</TableHead>
                     <TableHead>Saldo</TableHead>
+                    <TableHead>Fecha de Crédito</TableHead>
                     <TableHead>Vencimiento</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
@@ -262,6 +263,11 @@ export default function ClientDetail() {
                       <TableCell className="font-medium">{credit.concept}</TableCell>
                       <TableCell>${Number(credit.amount).toLocaleString("es-CO")}</TableCell>
                       <TableCell>${Number(credit.balance).toLocaleString("es-CO")}</TableCell>
+                      <TableCell>
+                        {credit.createdAt
+                          ? new Date(credit.createdAt).toLocaleDateString("es-CO")
+                          : "N/A"}
+                      </TableCell>
                       <TableCell>
                         {credit.dueDate
                           ? new Date(credit.dueDate).toLocaleDateString("es-CO")
