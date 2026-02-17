@@ -42,12 +42,14 @@ export async function generateImage(
   }
 
   // Build the full URL by appending the service path to the base URL
-  const baseUrl = ENV.forgeApiUrl.endsWith("/")
-    ? ENV.forgeApiUrl
-    : `${ENV.forgeApiUrl}/`;
+  const baseUrl = ENV.forgeApiUrl.trim();
+  if (!baseUrl || baseUrl.length === 0) {
+    throw new Error("BUILT_IN_FORGE_API_URL is not configured or is empty");
+  }
+  const normalizedUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   const fullUrl = new URL(
     "images.v1.ImageService/GenerateImage",
-    baseUrl
+    normalizedUrl
   ).toString();
 
   const response = await fetch(fullUrl, {

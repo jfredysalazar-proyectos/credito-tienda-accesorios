@@ -14,6 +14,9 @@ const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
 const buildEndpointUrl = (baseUrl: string): string => {
+  if (!baseUrl || baseUrl.trim().length === 0) {
+    throw new Error("Base URL is empty");
+  }
   const normalizedBase = baseUrl.endsWith("/")
     ? baseUrl
     : `${baseUrl}/`;

@@ -143,9 +143,17 @@ export async function transcribeAudio(
     formData.append("prompt", prompt);
 
     // Step 4: Call the transcription service
-    const baseUrl = ENV.forgeApiUrl.endsWith("/")
-      ? ENV.forgeApiUrl
-      : `${ENV.forgeApiUrl}/`;
+    const baseUrlTrimmed = ENV.forgeApiUrl.trim();
+    if (!baseUrlTrimmed || baseUrlTrimmed.length === 0) {
+      return {
+        error: "Voice transcription service URL is not configured",
+        code: "SERVICE_ERROR",
+        details: "BUILT_IN_FORGE_API_URL is empty"
+      };
+    }
+    const baseUrl = baseUrlTrimmed.endsWith("/")
+      ? baseUrlTrimmed
+      : `${baseUrlTrimmed}/`;
     
     const fullUrl = new URL(
       "v1/audio/transcriptions",

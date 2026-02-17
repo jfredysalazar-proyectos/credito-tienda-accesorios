@@ -25,8 +25,12 @@ export async function callDataApi(
   }
 
   // Build the full URL by appending the service path to the base URL
-  const baseUrl = ENV.forgeApiUrl.endsWith("/") ? ENV.forgeApiUrl : `${ENV.forgeApiUrl}/`;
-  const fullUrl = new URL("webdevtoken.v1.WebDevService/CallApi", baseUrl).toString();
+  const baseUrl = ENV.forgeApiUrl.trim();
+  if (!baseUrl || baseUrl.length === 0) {
+    throw new Error("BUILT_IN_FORGE_API_URL is not configured or is empty");
+  }
+  const normalizedUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const fullUrl = new URL("webdevtoken.v1.WebDevService/CallApi", normalizedUrl).toString();
 
   const response = await fetch(fullUrl, {
     method: "POST",
