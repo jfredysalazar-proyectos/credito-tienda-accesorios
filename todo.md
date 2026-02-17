@@ -51,3 +51,14 @@
 - [x] Documentar configuración de WhatsApp
 - [x] Documentar estructura de base de datos
 - [x] Crear guía de uso del sistema
+
+
+## Autenticación Independiente (Nueva)
+- [x] Reemplazar OAuth de Manus con sistema de login propio
+- [x] Crear tabla de usuarios con email/username y contraseña hasheada
+- [x] Implementar procedimiento de login con validación
+- [ ] Implementar procedimiento de registro de usuarios
+- [x] Crear página de login con formulario
+- [x] Crear usuario administrador por defecto (admin/admin123)
+- [x] Implementar logout
+- [x] Agregar validación de sesión en todas las rutas protegidas

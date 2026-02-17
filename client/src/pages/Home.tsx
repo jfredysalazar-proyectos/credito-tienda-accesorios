@@ -2,12 +2,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CreditCard, Users, MessageSquare, BarChart3 } from "lucide-react";
-import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { user, loading, isAuthenticated } = useAuth();
+  const { loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
   // Redirigir a dashboard si ya está autenticado
@@ -58,17 +57,10 @@ export default function Home() {
             <div className="flex gap-4">
               <Button
                 size="lg"
-                onClick={() => window.location.href = getLoginUrl()}
+                onClick={() => setLocation("/login")}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 Iniciar Sesión
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => window.location.href = getLoginUrl()}
-              >
-                Crear Cuenta
               </Button>
             </div>
           </div>
@@ -191,7 +183,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Autenticación OAuth integrada. Cada usuario solo ve sus propios clientes y créditos.
+                  Autenticación segura con contraseña. Cada usuario solo ve sus propios clientes y créditos.
                 </p>
               </CardContent>
             </Card>
@@ -210,7 +202,7 @@ export default function Home() {
           </p>
           <Button
             size="lg"
-            onClick={() => window.location.href = getLoginUrl()}
+            onClick={() => setLocation("/login")}
             className="bg-white text-blue-600 hover:bg-gray-100"
           >
             Iniciar Sesión Ahora

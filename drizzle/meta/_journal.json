@@ -15,6 +15,13 @@
       "when": 1771350233568,
       "tag": "0001_same_jetstream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771352277029,
+      "tag": "0002_quick_black_bolt",
+      "breakpoints": true
     }
   ]
 }

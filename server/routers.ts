@@ -5,29 +5,75 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import {
   createClient,
-  getClientsByUserId,
+  listClients,
   searchClients,
-  searchClientsByCedula,
   getClientById,
-  updateClient,
   createCredit,
-  getCreditsByClientId,
+  getCreditsbyClientId,
   getCreditById,
   updateCredit,
   getActiveCredits,
   createPayment,
   getPaymentsByCreditId,
-  getPaymentsByClientId,
-  getTotalPaidByCreditId,
   createWhatsappLog,
-  getWhatsappLogsByClientId,
+  getDashboardSummary,
 } from "./db";
 import { TRPCError } from "@trpc/server";
+import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
 
 export const appRouter = router({
   system: systemRouter,
+
+  // ============ AUTH ROUTERS ============
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query((opts) => opts.ctx.user),
+
+    login: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email("Email inválido"),
+          password: z.string().min(1, "Contraseña requerida"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const user = await getUserByEmail(input.email);
+
+        if (!user) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Email o contraseña incorrectos",
+          });
+        }
+
+        if (user.status !== "active") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "La cuenta está desactivada",
+          });
+        }
+
+        const isPasswordValid = await verifyPassword(input.password, user.passwordHash);
+
+        if (!isPasswordValid) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Email o contraseña incorrectos",
+          });
+        }
+
+        // Crear sesión (esto se maneja en el contexto)
+        // Por ahora solo retornamos el usuario
+        return {
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          },
+        };
+      }),
+
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -56,35 +102,29 @@ export const appRouter = router({
             cedula: input.cedula,
             whatsappNumber: input.whatsappNumber,
             creditLimit: input.creditLimit.toString(),
-            status: "active",
           });
+
           return { success: true };
-        } catch (error: any) {
-          if (error.message.includes("Duplicate entry")) {
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("Duplicate entry")) {
             throw new TRPCError({
               code: "CONFLICT",
-              message: "Ya existe un cliente con esta cédula",
+              message: "La cédula ya está registrada",
             });
           }
           throw error;
         }
       }),
 
-    // Obtener todos los clientes del usuario
+    // Listar clientes del usuario
     list: protectedProcedure.query(async ({ ctx }) => {
-      return getClientsByUserId(ctx.user.id);
+      return listClients(ctx.user.id);
     }),
 
-    // Buscar clientes por nombre o cédula
+    // Buscar clientes
     search: protectedProcedure
       .input(z.object({ query: z.string() }))
       .query(async ({ ctx, input }) => {
-        // Si la búsqueda es solo números, buscar por cédula
-        if (/^\d+$/.test(input.query)) {
-          const byId = await searchClientsByCedula(ctx.user.id, input.query);
-          if (byId.length > 0) return byId;
-        }
-        // Si no, buscar por nombre
         return searchClients(ctx.user.id, input.query);
       }),
 
@@ -100,36 +140,6 @@ export const appRouter = router({
           });
         }
         return client;
-      }),
-
-    // Actualizar cliente
-    update: protectedProcedure
-      .input(
-        z.object({
-          clientId: z.number(),
-          name: z.string().optional(),
-          whatsappNumber: z.string().optional(),
-          creditLimit: z.string().transform((val) => parseFloat(val)).optional(),
-          status: z.enum(["active", "inactive", "suspended"]).optional(),
-        })
-      )
-      .mutation(async ({ ctx, input }) => {
-        const client = await getClientById(input.clientId, ctx.user.id);
-        if (!client) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
-          });
-        }
-
-        const updateData: any = {};
-        if (input.name) updateData.name = input.name;
-        if (input.whatsappNumber) updateData.whatsappNumber = input.whatsappNumber;
-        if (input.creditLimit) updateData.creditLimit = input.creditLimit.toString();
-        if (input.status) updateData.status = input.status;
-
-        await updateClient(input.clientId, ctx.user.id, updateData);
-        return { success: true };
       }),
   }),
 
@@ -150,14 +160,15 @@ export const appRouter = router({
         const client = await getClientById(input.clientId, ctx.user.id);
         if (!client) {
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
+            code: "FORBIDDEN",
+            message: "No tienes permiso para crear créditos en este cliente",
           });
         }
 
-        // Calcular fecha de vencimiento
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + input.creditDays);
+        // Crear el crédito
+        const dueDate = input.creditDays > 0 
+          ? new Date(Date.now() + input.creditDays * 24 * 60 * 60 * 1000)
+          : null;
 
         await createCredit({
           clientId: input.clientId,
@@ -165,7 +176,7 @@ export const appRouter = router({
           amount: input.amount.toString(),
           balance: input.amount.toString(),
           creditDays: input.creditDays,
-          dueDate: input.creditDays > 0 ? dueDate : null,
+          dueDate,
           status: "active",
         });
 
@@ -174,7 +185,7 @@ export const appRouter = router({
           clientId: input.clientId,
           messageType: "new_credit",
           phoneNumber: client.whatsappNumber,
-          messageContent: "", // Se llenará después
+          messageContent: "",
           status: "pending",
         });
 
@@ -185,16 +196,15 @@ export const appRouter = router({
     getByClientId: protectedProcedure
       .input(z.object({ clientId: z.number() }))
       .query(async ({ ctx, input }) => {
-        // Verificar que el cliente pertenece al usuario
         const client = await getClientById(input.clientId, ctx.user.id);
         if (!client) {
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
+            code: "FORBIDDEN",
+            message: "No tienes permiso para acceder a estos créditos",
           });
         }
 
-        return getCreditsByClientId(input.clientId);
+        return getCreditsbyClientId(input.clientId);
       }),
 
     // Obtener crédito por ID
@@ -313,103 +323,25 @@ export const appRouter = router({
 
         return getPaymentsByCreditId(input.creditId);
       }),
-
-    // Obtener pagos de un cliente
-    getByClientId: protectedProcedure
-      .input(z.object({ clientId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const client = await getClientById(input.clientId, ctx.user.id);
-        if (!client) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
-          });
-        }
-
-        return getPaymentsByClientId(input.clientId);
-      }),
-
-    // Obtener total pagado de un crédito
-    getTotalPaid: protectedProcedure
-      .input(z.object({ creditId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const credit = await getCreditById(input.creditId);
-        if (!credit) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Crédito no encontrado",
-          });
-        }
-
-        // Verificar que el cliente pertenece al usuario
-        const client = await getClientById(credit.clientId, ctx.user.id);
-        if (!client) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "No tienes permiso para acceder a esta información",
-          });
-        }
-
-        return getTotalPaidByCreditId(input.creditId);
-      }),
   }),
 
   // ============ DASHBOARD ROUTERS ============
   dashboard: router({
-    // Obtener resumen del dashboard
     getSummary: protectedProcedure.query(async ({ ctx }) => {
-      const activeCredits = await getActiveCredits(ctx.user.id);
-      
-      let totalActiveCredit = 0;
-      let totalBalance = 0;
-      
-      for (const { credits: credit } of activeCredits) {
-        totalActiveCredit += Number(credit.amount);
-        totalBalance += Number(credit.balance);
-      }
-
-      const clients = await getClientsByUserId(ctx.user.id);
-      const clientsWithOverdueCredit = clients.filter((client) => {
-        // Este cálculo se hará en el frontend o se puede mejorar aquí
-        return true;
-      });
-
-      return {
-        totalClients: clients.length,
-        totalActiveCredits: activeCredits.length,
-        totalActiveAmount: totalActiveCredit,
-        totalPendingBalance: totalBalance,
-        clientsCount: clients.length,
-      };
+      return getDashboardSummary(ctx.user.id);
     }),
   }),
 
   // ============ WHATSAPP ROUTERS ============
   whatsapp: router({
-    // Obtener logs de WhatsApp de un cliente
-    getLogs: protectedProcedure
-      .input(z.object({ clientId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        const client = await getClientById(input.clientId, ctx.user.id);
-        if (!client) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
-          });
-        }
-
-        return getWhatsappLogsByClientId(input.clientId);
-      }),
-
-    // Enviar estado de cuenta manual
     sendStatement: protectedProcedure
       .input(z.object({ clientId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const client = await getClientById(input.clientId, ctx.user.id);
         if (!client) {
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Cliente no encontrado",
+            code: "FORBIDDEN",
+            message: "No tienes permiso para enviar este mensaje",
           });
         }
 
@@ -418,7 +350,7 @@ export const appRouter = router({
           clientId: input.clientId,
           messageType: "manual_statement",
           phoneNumber: client.whatsappNumber,
-          messageContent: "", // Se llenará después
+          messageContent: "",
           status: "pending",
         });
 
