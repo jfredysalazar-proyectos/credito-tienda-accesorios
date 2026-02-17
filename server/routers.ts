@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
+import { sdk } from "./_core/sdk";
 import { z } from "zod";
 import {
   createClient,
@@ -61,8 +61,10 @@ export const appRouter = router({
           });
         }
 
-        // Crear sesión (esto se maneja en el contexto)
-        // Por ahora solo retornamos el usuario
+        // Crear token de sesión
+        const sessionToken = await sdk.createSessionToken(user.id, user.email);
+        sdk.setSessionCookie(ctx.res, sessionToken);
+
         return {
           success: true,
           user: {
@@ -75,8 +77,7 @@ export const appRouter = router({
       }),
 
     logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      sdk.clearSessionCookie(ctx.res);
       return {
         success: true,
       } as const;

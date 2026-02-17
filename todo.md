@@ -64,5 +64,6 @@
 - [x] Agregar validación de sesión en todas las rutas protegidas
 
 
-## Correcciones Pendientes
+### Correcciones Pendientes
 - [x] Corregir menú de navegación lateral (mostrar opciones correctas en lugar de Page 1, Page 2)
+- [x] Corregir error 404 después del login (redireccionamiento a ruta incorrecta)
