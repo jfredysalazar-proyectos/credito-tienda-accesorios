@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, like, desc, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, clients, credits, payments, whatsappLogs, InsertClient, InsertCredit, InsertPayment, InsertWhatsappLog } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,223 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============ CLIENT FUNCTIONS ============
+
+export async function createClient(userId: number, data: Omit<InsertClient, 'userId'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(clients).values({
+    ...data,
+    userId,
+  });
+
+  return result;
+}
+
+export async function getClientsByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(clients).where(eq(clients.userId, userId)).orderBy(desc(clients.createdAt));
+}
+
+export async function searchClients(userId: number, query: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const searchTerm = `%${query}%`;
+  return db
+    .select()
+    .from(clients)
+    .where(
+      and(
+        eq(clients.userId, userId),
+        like(clients.name, searchTerm),
+      )
+    )
+    .orderBy(desc(clients.createdAt));
+}
+
+export async function searchClientsByCedula(userId: number, cedula: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(clients)
+    .where(
+      and(
+        eq(clients.userId, userId),
+        eq(clients.cedula, cedula),
+      )
+    )
+    .limit(1);
+}
+
+export async function getClientById(clientId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(clients)
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.userId, userId),
+      )
+    )
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateClient(clientId: number, userId: number, data: Partial<InsertClient>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .update(clients)
+    .set(data)
+    .where(
+      and(
+        eq(clients.id, clientId),
+        eq(clients.userId, userId),
+      )
+    );
+}
+
+// ============ CREDIT FUNCTIONS ============
+
+export async function createCredit(data: InsertCredit) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(credits).values(data);
+  return result;
+}
+
+export async function getCreditsByClientId(clientId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(credits)
+    .where(eq(credits.clientId, clientId))
+    .orderBy(desc(credits.createdAt));
+}
+
+export async function getCreditById(creditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(credits)
+    .where(eq(credits.id, creditId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateCredit(creditId: number, data: Partial<InsertCredit>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .update(credits)
+    .set(data)
+    .where(eq(credits.id, creditId));
+}
+
+export async function getActiveCredits(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(credits)
+    .innerJoin(clients, eq(credits.clientId, clients.id))
+    .where(
+      and(
+        eq(clients.userId, userId),
+        eq(credits.status, "active"),
+      )
+    )
+    .orderBy(desc(credits.createdAt));
+}
+
+// ============ PAYMENT FUNCTIONS ============
+
+export async function createPayment(data: InsertPayment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.insert(payments).values(data);
+}
+
+export async function getPaymentsByCreditId(creditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(payments)
+    .where(eq(payments.creditId, creditId))
+    .orderBy(desc(payments.createdAt));
+}
+
+export async function getPaymentsByClientId(clientId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(payments)
+    .where(eq(payments.clientId, clientId))
+    .orderBy(desc(payments.createdAt));
+}
+
+export async function getTotalPaidByCreditId(creditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select({ total: sum(payments.amount) })
+    .from(payments)
+    .where(eq(payments.creditId, creditId));
+
+  return result[0]?.total ? Number(result[0].total) : 0;
+}
+
+// ============ WHATSAPP LOG FUNCTIONS ============
+
+export async function createWhatsappLog(data: InsertWhatsappLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.insert(whatsappLogs).values(data);
+}
+
+export async function getWhatsappLogsByClientId(clientId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(whatsappLogs)
+    .where(eq(whatsappLogs.clientId, clientId))
+    .orderBy(desc(whatsappLogs.createdAt));
+}
+
+export async function updateWhatsappLog(logId: number, data: Partial<InsertWhatsappLog>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .update(whatsappLogs)
+    .set(data)
+    .where(eq(whatsappLogs.id, logId));
+}
