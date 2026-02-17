@@ -11,6 +11,7 @@ import ClientsList from "./pages/ClientsList";
 import ClientDetail from "./pages/ClientDetail";
 import NewClient from "./pages/NewClient";
 import QuickCredit from "./pages/QuickCredit";
+import Reports from "./pages/Reports";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -28,10 +29,9 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path={"/"} component={Home} />
         <Route path={"/login"} component={Login} />
         <Route path={"/404"} component={NotFound} />
-        <Route component={NotFound} />
+        <Route component={Login} />
       </Switch>
     );
   }
@@ -39,11 +39,13 @@ function Router() {
   return (
     <DashboardLayout>
       <Switch>
+        <Route path={"/"} component={Dashboard} />
         <Route path={"/dashboard"} component={Dashboard} />
         <Route path={"/nuevo-credito"} component={QuickCredit} />
         <Route path={"/clientes"} component={ClientsList} />
         <Route path={"/clientes/nuevo"} component={NewClient} />
         <Route path={"/clientes/:id"} component={ClientDetail} />
+        <Route path={"/reportes"} component={Reports} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
       </Switch>

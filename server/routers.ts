@@ -21,6 +21,7 @@ import {
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
+import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
 
 export const appRouter = router({
   system: systemRouter,
@@ -381,6 +382,33 @@ export const appRouter = router({
 
         return { success: true };
       }),
+  }),
+
+  // ============ REPORTS ROUTERS ============
+  reports: router({
+    overdueCredits: protectedProcedure.query(async ({ ctx }) => {
+      const buffer = await generateOverdueCreditsReport(ctx.user.id);
+      return {
+        filename: `reporte-creditos-vencidos-${new Date().toISOString().split('T')[0]}.pdf`,
+        data: buffer.toString('base64'),
+      };
+    }),
+
+    clientDebt: protectedProcedure.query(async ({ ctx }) => {
+      const buffer = await generateClientDebtReport(ctx.user.id);
+      return {
+        filename: `reporte-deuda-clientes-${new Date().toISOString().split('T')[0]}.pdf`,
+        data: buffer.toString('base64'),
+      };
+    }),
+
+    paymentAnalysis: protectedProcedure.query(async ({ ctx }) => {
+      const buffer = await generatePaymentAnalysisReport(ctx.user.id);
+      return {
+        filename: `reporte-analisis-pagos-${new Date().toISOString().split('T')[0]}.pdf`,
+        data: buffer.toString('base64'),
+      };
+    }),
   }),
 });
 

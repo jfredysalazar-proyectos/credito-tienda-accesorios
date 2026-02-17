@@ -74,6 +74,7 @@
 ## Nuevas Funcionalidades Solicitadas
 - [x] Corregir error 404 en página raíz (redirigir a dashboard)
 - [x] Agregar acceso rápido "Nuevo Crédito" en menú lateral con selector de cliente
-- [ ] Agregar edición de clientes en página de detalle
-- [ ] Crear reportes exportables en PDF
+- [x] Dashboard como página principal en la raíz
+- [x] Agregar edición de clientes con formulario modal
+- [x] Crear reportes exportables en PDF
 - [ ] Implementar alertas de vencimiento por WhatsApp

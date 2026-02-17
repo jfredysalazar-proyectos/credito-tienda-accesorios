@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import EditClientForm from "@/components/EditClientForm";
 import {
   Table,
   TableBody,
@@ -171,7 +172,27 @@ export default function ClientDetail() {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Edit className="mr-2 h-4 w-4" />
+              Editar Cliente
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Cliente</DialogTitle>
+              <DialogDescription>
+                Modifica la información del cliente
+              </DialogDescription>
+            </DialogHeader>
+            <EditClientForm
+              client={client}
+              onClose={() => setIsEditOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
         <Dialog open={isNewCreditOpen} onOpenChange={setIsNewCreditOpen}>
           <DialogTrigger asChild>
             <Button>
