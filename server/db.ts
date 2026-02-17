@@ -74,6 +74,22 @@ export async function searchClients(userId: number, query: string) {
   );
 }
 
+export async function updateClient(clientId: number, userId: number, data: Partial<Omit<InsertClient, 'userId'>>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar que el cliente pertenece al usuario
+  const client = await getClientById(clientId, userId);
+  if (!client) throw new Error("Cliente no encontrado");
+
+  const result = await db
+    .update(clients)
+    .set(data)
+    .where(eq(clients.id, clientId));
+
+  return result;
+}
+
 // ============ CREDIT FUNCTIONS ============
 
 export async function createCredit(data: InsertCredit) {

@@ -69,3 +69,11 @@
 - [x] Corregir error 404 después del login (redireccionamiento a ruta incorrecta)
 
 - [x] Corregir error React #321 al crear crédito y registrar abono
+
+
+## Nuevas Funcionalidades Solicitadas
+- [x] Corregir error 404 en página raíz (redirigir a dashboard)
+- [x] Agregar acceso rápido "Nuevo Crédito" en menú lateral con selector de cliente
+- [ ] Agregar edición de clientes en página de detalle
+- [ ] Crear reportes exportables en PDF
+- [ ] Implementar alertas de vencimiento por WhatsApp

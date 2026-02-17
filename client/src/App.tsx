@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import ClientsList from "./pages/ClientsList";
 import ClientDetail from "./pages/ClientDetail";
 import NewClient from "./pages/NewClient";
+import QuickCredit from "./pages/QuickCredit";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -39,6 +40,7 @@ function Router() {
     <DashboardLayout>
       <Switch>
         <Route path={"/dashboard"} component={Dashboard} />
+        <Route path={"/nuevo-credito"} component={QuickCredit} />
         <Route path={"/clientes"} component={ClientsList} />
         <Route path={"/clientes/nuevo"} component={NewClient} />
         <Route path={"/clientes/:id"} component={ClientDetail} />

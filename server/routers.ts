@@ -8,6 +8,7 @@ import {
   listClients,
   searchClients,
   getClientById,
+  updateClient,
   createCredit,
   getCreditsbyClientId,
   getCreditById,
@@ -141,6 +142,29 @@ export const appRouter = router({
           });
         }
         return client;
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          clientId: z.number(),
+          name: z.string().min(1).optional(),
+          cedula: z.string().min(1).optional(),
+          whatsappNumber: z.string().min(1).optional(),
+          creditLimit: z.string().transform((val) => parseFloat(val)).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { clientId, ...updateData } = input;
+        const dataToUpdate: any = {};
+        
+        if (updateData.name) dataToUpdate.name = updateData.name;
+        if (updateData.cedula) dataToUpdate.cedula = updateData.cedula;
+        if (updateData.whatsappNumber) dataToUpdate.whatsappNumber = updateData.whatsappNumber;
+        if (updateData.creditLimit !== undefined) dataToUpdate.creditLimit = updateData.creditLimit.toString();
+
+        await updateClient(clientId, ctx.user.id, dataToUpdate);
+        return { success: true };
       }),
   }),
 

@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2 } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -36,6 +36,7 @@ export default function ClientDetail() {
 
   const [isNewCreditOpen, setIsNewCreditOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedCreditId, setSelectedCreditId] = useState<number | null>(null);
 
   const { data: client, isLoading: clientLoading } = trpc.clients.getById.useQuery(
