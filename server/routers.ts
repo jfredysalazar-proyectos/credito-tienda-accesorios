@@ -18,6 +18,8 @@ import {
   getPaymentsByCreditId,
   createWhatsappLog,
   getDashboardSummary,
+  createGeneralPayment,
+  getPaymentsByCredit,
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
@@ -348,6 +350,63 @@ export const appRouter = router({
         }
 
         return getPaymentsByCreditId(input.creditId);
+      }),
+
+    // Pago general a la deuda del cliente
+    createGeneral: protectedProcedure
+      .input(
+        z.object({
+          clientId: z.number(),
+          amount: z.number().positive(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const client = await getClientById(input.clientId, ctx.user.id);
+        if (!client) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No tienes permiso para crear este pago",
+          });
+        }
+
+        const result = await createGeneralPayment(
+          input.clientId,
+          input.amount,
+          ctx.user.id
+        );
+
+        await createWhatsappLog({
+          clientId: input.clientId,
+          messageType: "payment_received",
+          phoneNumber: client.whatsappNumber,
+          messageContent: input.amount.toString(),
+          status: "pending",
+        });
+
+        return result;
+      }),
+
+    // Obtener pagos de un crédito específico
+    getByCredit: protectedProcedure
+      .input(z.object({ creditId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const credit = await getCreditById(input.creditId);
+        if (!credit) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Credito no encontrado",
+          });
+        }
+
+        const client = await getClientById(credit.clientId, ctx.user.id);
+        if (!client) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No tienes permiso para acceder a estos pagos",
+          });
+        }
+
+        return getPaymentsByCredit(input.creditId);
       }),
   }),
 

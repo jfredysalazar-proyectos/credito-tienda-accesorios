@@ -80,3 +80,10 @@
 - [ ] Implementar alertas de vencimiento por WhatsApp
 
 - [x] Agregar fecha de creación del crédito en tabla de Créditos Registrados
+
+
+## Nuevas Mejoras Solicitadas
+- [ ] Implementar historial de pagos expandible en tabla de créditos
+- [ ] Agregar opción de pago general a la deuda del cliente
+- [ ] Distribuir pagos generales entre créditos activos automáticamente
+- [ ] Registrar todos los pagos con fecha exacta

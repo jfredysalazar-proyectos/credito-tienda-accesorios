@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2, Edit } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import EditClientForm from "@/components/EditClientForm";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -38,7 +39,10 @@ export default function ClientDetail() {
   const [isNewCreditOpen, setIsNewCreditOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isGeneralPaymentOpen, setIsGeneralPaymentOpen] = useState(false);
   const [selectedCreditId, setSelectedCreditId] = useState<number | null>(null);
+  const [expandedCredits, setExpandedCredits] = useState<Set<number>>(new Set());
+  const [generalPaymentAmount, setGeneralPaymentAmount] = useState("");
 
   const { data: client, isLoading: clientLoading } = trpc.clients.getById.useQuery(
     { clientId },
@@ -488,3 +492,7 @@ function PaymentForm({
     </form>
   );
 }
+
+
+  // Agregar después de sendStatementMutation:
+  // const createGeneralPaymentMutation = trpc.payments.createGeneral.useMutation({...});

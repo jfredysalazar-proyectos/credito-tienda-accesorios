@@ -214,3 +214,76 @@ export async function getDashboardSummary(userId: number) {
     totalPendingBalance,
   };
 }
+
+
+// ============ GENERAL PAYMENT FUNCTION ============
+
+export async function createGeneralPayment(
+  clientId: number,
+  amount: number,
+  userId: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar que el cliente pertenece al usuario
+  const client = await getClientById(clientId, userId);
+  if (!client) throw new Error("Client not found");
+
+  // Obtener créditos activos del cliente
+  const allCredits = await db.select().from(credits);
+  const activeCredits = allCredits.filter(
+    (c) => c.clientId === clientId && c.status === "active"
+  );
+
+  if (activeCredits.length === 0) {
+    throw new Error("No active credits found for this client");
+  }
+
+  let remainingAmount = amount;
+  const paymentsToCreate: InsertPayment[] = [];
+
+  // Distribuir el pago entre los créditos activos
+  for (const credit of activeCredits) {
+    if (remainingAmount <= 0) break;
+
+    const creditBalance = Number(credit.balance);
+    const paymentAmount = Math.min(remainingAmount, creditBalance);
+
+    // Crear pago para este crédito
+    paymentsToCreate.push({
+      creditId: credit.id,
+      clientId: clientId,
+      amount: paymentAmount.toString(),
+      paymentMethod: "general_payment",
+      createdAt: new Date(),
+    });
+
+    remainingAmount -= paymentAmount;
+  }
+
+  // Insertar todos los pagos
+  if (paymentsToCreate.length > 0) {
+    await db.insert(payments).values(paymentsToCreate);
+  }
+
+  return {
+    success: true,
+    paymentsCreated: paymentsToCreate.length,
+    totalPaid: amount,
+  };
+}
+
+// ============ GET PAYMENTS BY CREDIT ============
+
+export async function getPaymentsByCredit(creditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.creditId, creditId));
+
+  return result;
+}
