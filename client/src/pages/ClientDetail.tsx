@@ -32,6 +32,7 @@ export default function ClientDetail() {
   const [, setLocation] = useLocation();
   const params = useParams();
   const clientId = parseInt(params.id || "0");
+  const utils = trpc.useUtils();
 
   const [isNewCreditOpen, setIsNewCreditOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -51,7 +52,8 @@ export default function ClientDetail() {
     onSuccess: () => {
       toast.success("Crédito registrado exitosamente");
       setIsNewCreditOpen(false);
-      trpc.useUtils().credits.getByClientId.invalidate({ clientId });
+      void utils.credits.getByClientId.invalidate({ clientId });
+      void utils.clients.getById.invalidate({ clientId });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el crédito");
@@ -63,7 +65,8 @@ export default function ClientDetail() {
       toast.success("Pago registrado exitosamente");
       setIsPaymentOpen(false);
       setSelectedCreditId(null);
-      trpc.useUtils().credits.getByClientId.invalidate({ clientId });
+      void utils.credits.getByClientId.invalidate({ clientId });
+      void utils.clients.getById.invalidate({ clientId });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago");
@@ -73,6 +76,7 @@ export default function ClientDetail() {
   const sendStatementMutation = trpc.whatsapp.sendStatement.useMutation({
     onSuccess: () => {
       toast.success("Estado de cuenta enviado por WhatsApp");
+      void utils.credits.getByClientId.invalidate({ clientId });
     },
     onError: (error) => {
       toast.error(error.message || "Error al enviar el estado de cuenta");
