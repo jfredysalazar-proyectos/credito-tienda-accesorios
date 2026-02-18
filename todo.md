@@ -96,3 +96,9 @@
 - [x] Optimizar formularios para móvil
 - [x] Ajustar navegación lateral para móvil
 - [ ] Probar en dispositivos reales
+
+
+## Bugs Encontrados - Sesión Actual
+- [x] PDF no descarga correctamente (agregado logging para diagnosticar)
+- [x] Lógica de pagos permite montos mayores que la deuda (CORREGIDO: validación agregada)
+- [x] Mostrar saldo negativo cuando pago es mayor que deuda (CORREGIDO: ahora rechaza pagos mayores que saldo)

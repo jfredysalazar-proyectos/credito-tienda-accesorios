@@ -115,6 +115,8 @@ export default function PaymentHistory({
       const result = await exportMutation.mutateAsync({ clientId });
       
       console.log("Resultado de exportación:", result);
+      console.log("Tipo de resultado:", typeof result);
+      console.log("Propiedades:", Object.keys(result || {}));
       
       if (result.pdf) {
         // Decodificar base64

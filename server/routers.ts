@@ -412,6 +412,15 @@ export const appRouter = router({
           });
         }
 
+        // Validar que el pago no sea mayor que el saldo
+        const currentBalance = Number(credit.balance);
+        if (input.amount > currentBalance) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `El pago no puede ser mayor que el saldo adeudado. Saldo: $${currentBalance.toLocaleString("es-CO")}, Pago: $${input.amount.toLocaleString("es-CO")}`,
+          });
+        }
+
         // Crear el pago
         await createPayment({
           creditId: input.creditId,
@@ -421,12 +430,12 @@ export const appRouter = router({
           notes: input.notes || null,
         });
 
-        // Actualizar el saldo del crédito
-        const newBalance = Number(credit.balance) - input.amount;
+        // Actualizar el saldo del crédito (permitir saldos negativos)
+        const newBalance = currentBalance - input.amount;
         const newStatus = newBalance <= 0 ? "paid" : "active";
 
         await updateCredit(input.creditId, {
-          balance: Math.max(0, newBalance).toString(),
+          balance: newBalance.toString(),
           status: newStatus,
         });
 
@@ -547,27 +556,42 @@ export const appRouter = router({
     exportToPDF: protectedProcedure
       .input(z.object({ clientId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const client = await getClientById(input.clientId, ctx.user.id);
-        if (!client) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "No tienes permiso para acceder a este cliente",
-          });
-        }
+        try {
+          console.log("[PDF Export] Iniciando para cliente:", input.clientId);
+          
+          const client = await getClientById(input.clientId, ctx.user.id);
+          if (!client) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "No tienes permiso para acceder a este cliente",
+            });
+          }
+          console.log("[PDF Export] Cliente encontrado:", client.name);
 
-        const history = await getPaymentHistoryByClient(input.clientId, ctx.user.id);
-        
-        // Generar PDF
-        const pdfBuffer = await generatePaymentHistoryPDF(client, history);
-        
-        // Convertir PDF a base64
-        const base64Pdf = pdfBuffer.toString("base64");
-        
-        return {
-          success: true,
-          pdf: base64Pdf,
-          filename: `historial-pagos-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`,
-        };
+          const history = await getPaymentHistoryByClient(input.clientId, ctx.user.id);
+          console.log("[PDF Export] Historial obtenido:", history.length, "pagos");
+          
+          // Generar PDF
+          console.log("[PDF Export] Generando PDF...");
+          const pdfBuffer = await generatePaymentHistoryPDF(client, history);
+          console.log("[PDF Export] PDF generado:", pdfBuffer.length, "bytes");
+          
+          // Convertir PDF a base64
+          const base64Pdf = pdfBuffer.toString("base64");
+          console.log("[PDF Export] Base64 generado:", base64Pdf.length, "caracteres");
+          
+          const filename = `historial-pagos-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+          console.log("[PDF Export] Retornando resultado con filename:", filename);
+          
+          return {
+            success: true,
+            pdf: base64Pdf,
+            filename,
+          };
+        } catch (error) {
+          console.error("[PDF Export] Error:", error);
+          throw error;
+        }
       }),
   }),
 
