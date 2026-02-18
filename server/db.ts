@@ -316,11 +316,13 @@ export async function createGeneralPayment(
 
   // Actualizar balance de los créditos
   for (const credit of creditsToUpdate) {
-    const newStatus = credit.newBalance <= 0 ? "paid" : "active";
+    // Si el nuevo balance es 0 o menor, marcar como pagado
+    const finalBalance = Math.max(0, credit.newBalance);
+    const newStatus = finalBalance === 0 ? "paid" : "active";
     await db
       .update(credits)
       .set({ 
-        balance: credit.newBalance.toString(),
+        balance: finalBalance.toString(),
         status: newStatus
       })
       .where(eq(credits.id, credit.id));
