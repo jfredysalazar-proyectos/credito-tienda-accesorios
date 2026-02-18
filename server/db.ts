@@ -334,30 +334,26 @@ export async function getPaymentHistoryByClient(clientId: number, userId: number
     .from(credits)
     .where(eq(credits.clientId, clientId));
 
-  // Obtener todos los pagos de los créditos del cliente
+  // Obtener todos los pagos del cliente, ordenados por fecha
   const allPayments = await db
     .select()
     .from(payments)
-    .where(eq(payments.clientId, clientId));
+    .where(eq(payments.clientId, clientId))
+    .orderBy((p) => p.createdAt);
 
-  // Ordenar pagos por fecha
-  const sortedPayments = allPayments.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  // Calcular saldos anteriores y nuevos para cada pago
-  const paymentHistory = sortedPayments.map((payment, index) => {
+  // Para cada pago, calcular el saldo anterior y nuevo
+  const paymentHistory = allPayments.map((payment) => {
     // Encontrar el crédito asociado
     const credit = clientCredits.find((c) => c.id === payment.creditId);
     if (!credit) return null;
 
-    // Calcular saldo anterior
-    let previousBalance = Number(credit.amount);
+    // Calcular saldo anterior: es el balance actual más los pagos posteriores
+    let previousBalance = Number(credit.balance);
     
-    // Restar todos los pagos anteriores a este
-    for (let i = 0; i < index; i++) {
-      if (sortedPayments[i]?.creditId === payment.creditId) {
-        previousBalance -= Number(sortedPayments[i]!.amount);
+    // Sumar todos los pagos posteriores a este para obtener el saldo anterior
+    for (const p of allPayments) {
+      if (p.creditId === payment.creditId && new Date(p.createdAt) > new Date(payment.createdAt)) {
+        previousBalance += Number(p.amount);
       }
     }
 
