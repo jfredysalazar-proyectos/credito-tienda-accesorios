@@ -173,14 +173,17 @@ export async function getPaymentsByCreditId(creditId: number) {
   if (!credit || credit.length === 0) throw new Error("Credit not found");
   
   const originalAmount = Number(credit[0].amount);
+  const currentBalance = Number(credit[0].balance);
+  const totalPaid = originalAmount - currentBalance;
+  
   const rawPayments = await db.select().from(payments).where(eq(payments.creditId, creditId)).orderBy(payments.createdAt);
   
-  let currentBalance = originalAmount;
+  let runningBalance = originalAmount;
   const paymentsWithBalance = rawPayments.map((payment: any) => {
-    const previousBalance = currentBalance;
+    const previousBalance = runningBalance;
     const amount = Number(payment.amount);
     const newBalance = previousBalance - amount;
-    currentBalance = newBalance;
+    runningBalance = newBalance;
     
     return {
       ...payment,

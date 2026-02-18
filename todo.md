@@ -103,3 +103,8 @@
 - [x] Lógica de pagos permite montos mayores que la deuda (CORREGIDO: validación agregada)
 - [x] Mostrar saldo negativo cuando pago es mayor que deuda (CORREGIDO: ahora rechaza pagos mayores que saldo)
 - [x] Columnas del PDF superpuestas y no legibles (CORREGIDO: reescrito layout de tabla con mejor posicionamiento)
+
+
+## Bugs Encontrados - Sesión Actual (Distribución de Pagos)
+- [ ] Distribución incorrecta de pagos entre múltiples créditos del cliente (muestra $116.000 cuando debería ser $141.000)
+- [ ] Los pagos se asignan a un solo crédito en lugar de distribuirse entre los créditos activos del cliente
