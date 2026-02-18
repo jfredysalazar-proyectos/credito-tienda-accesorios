@@ -169,7 +169,29 @@ export async function getPaymentsByCreditId(creditId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db.select().from(payments).where(eq(payments.creditId, creditId));
+  const credit = await db.select().from(credits).where(eq(credits.id, creditId)).limit(1);
+  if (!credit || credit.length === 0) throw new Error("Credit not found");
+  
+  const originalAmount = Number(credit[0].amount);
+  const rawPayments = await db.select().from(payments).where(eq(payments.creditId, creditId)).orderBy(payments.createdAt);
+  
+  let currentBalance = originalAmount;
+  const paymentsWithBalance = rawPayments.map((payment: any) => {
+    const previousBalance = currentBalance;
+    const amount = Number(payment.amount);
+    const newBalance = previousBalance - amount;
+    currentBalance = newBalance;
+    
+    return {
+      ...payment,
+      previousBalance,
+      newBalance,
+      amount,
+      concept: credit[0].concept || 'Pago'
+    };
+  });
+  
+  return paymentsWithBalance;
 }
 
 // ============ WHATSAPP LOG FUNCTIONS ============
