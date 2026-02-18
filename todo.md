@@ -76,7 +76,7 @@
 - [x] Agregar acceso rápido "Nuevo Crédito" en menú lateral con selector de cliente
 - [x] Dashboard como página principal en la raíz
 - [x] Agregar edición de clientes con formulario modal
-- [x] Crear reportes exportables en PDF
+- [x] Crear reportes exportables en PDF (COMPLETADO: Implementado con pdfkit)
 - [ ] Implementar alertas de vencimiento por WhatsApp
 
 - [x] Agregar fecha de creación del crédito en tabla de Créditos Registrados

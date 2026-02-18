@@ -28,6 +28,7 @@ import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
 import { eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
+import { generatePaymentHistoryPDF } from "./pdf-generator";
 // Updated: 2026-02-17 - Force Railway redeploy
 
 export const appRouter = router({
@@ -556,15 +557,15 @@ export const appRouter = router({
 
         const history = await getPaymentHistoryByClient(input.clientId, ctx.user.id);
         
-        // Generar contenido HTML para el PDF
-        const htmlContent = generatePaymentHistoryHTML(client, history);
+        // Generar PDF
+        const pdfBuffer = await generatePaymentHistoryPDF(client, history);
         
-        // Convertir HTML a base64 para que el navegador lo descargue
-        const base64Html = Buffer.from(htmlContent).toString("base64");
+        // Convertir PDF a base64
+        const base64Pdf = pdfBuffer.toString("base64");
         
         return {
           success: true,
-          html: base64Html,
+          pdf: base64Pdf,
           filename: `historial-pagos-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`,
         };
       }),
@@ -636,89 +637,3 @@ export type AppRouter = typeof appRouter;
 
 // ============ HELPER FUNCTIONS ============
 
-function generatePaymentHistoryHTML(client: any, history: any[]) {
-  const now = new Date();
-  const formattedDate = now.toLocaleDateString("es-CO", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  const totalPaid = history.reduce((sum, p) => sum + p.amount, 0);
-
-  let tableRows = history
-    .map(
-      (payment) => `
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${new Date(payment.createdAt).toLocaleDateString("es-CO")}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${payment.concept}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$${payment.previousBalance.toLocaleString("es-CO")}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: #e74c3c;">-$${payment.amount.toLocaleString("es-CO")}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right; color: #27ae60;">$${payment.newBalance.toLocaleString("es-CO")}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${payment.paymentMethod}</td>
-      <td style="padding: 8px; border-bottom: 1px solid #ddd;">${payment.notes || "-"}</td>
-    </tr>
-  `
-    )
-    .join("");
-
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Historial de Pagos</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-        .header { margin-bottom: 30px; border-bottom: 2px solid #3498db; padding-bottom: 15px; }
-        .header h1 { margin: 0; color: #2c3e50; }
-        .header p { margin: 5px 0; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-        .info-box { background: #ecf0f1; padding: 10px; border-radius: 5px; }
-        .info-box label { font-weight: bold; color: #2c3e50; }
-        .info-box value { display: block; margin-top: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table th { background: #3498db; color: white; padding: 10px; text-align: left; }
-        .summary { background: #e8f8f5; padding: 15px; border-left: 4px solid #27ae60; margin-top: 20px; }
-        .summary-text { font-size: 16px; font-weight: bold; color: #27ae60; }
-        .footer { margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 12px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>Historial de Pagos</h1>
-        <p><strong>Cliente:</strong> ${client.name}</p>
-        <p><strong>Cédula:</strong> ${client.cedula}</p>
-        <p><strong>Teléfono:</strong> ${client.whatsappNumber}</p>
-        <p><strong>Fecha de Reporte:</strong> ${formattedDate}</p>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Concepto</th>
-            <th>Saldo Anterior</th>
-            <th>Pago</th>
-            <th>Nuevo Saldo</th>
-            <th>Forma de Pago</th>
-            <th>Notas</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${tableRows}
-        </tbody>
-      </table>
-
-      <div class="summary">
-        <div class="summary-text">Total Pagado: $${totalPaid.toLocaleString("es-CO")}</div>
-      </div>
-
-      <div class="footer">
-        <p>Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.</p>
-        <p>Generado el ${formattedDate}</p>
-      </div>
-    </body>
-    </html>
-  `;
-}

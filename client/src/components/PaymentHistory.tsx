@@ -116,16 +116,16 @@ export default function PaymentHistory({
       
       console.log("Resultado de exportación:", result);
       
-      if (result.html) {
+      if (result.pdf) {
         // Decodificar base64
-        const binaryString = atob(result.html);
+        const binaryString = atob(result.pdf);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
         
         // Crear blob y descargar
-        const blob = new Blob([bytes], { type: "text/html" });
+        const blob = new Blob([bytes], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
