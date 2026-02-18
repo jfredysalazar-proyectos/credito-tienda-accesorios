@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, concept, amount, balance, status FROM credits ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 39APTXvo4uMgQep.root --database DeEuadowf9qAwz5LwVE6pc --execute SELECT id, concept, amount, balance, status FROM credits ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "3",
+      "concept": "Cable USb Impresora",
+      "amount": "10000.00",
+      "balance": "10000.00",
+      "status": "active"
+    },
+    {
+      "id": "2",
+      "concept": "micro sd de 64gb",
+      "amount": "58000.00",
+      "balance": "58000.00",
+      "status": "active"
+    },
+    {
+      "id": "1",
+      "concept": "Camara IP Interior",
+      "amount": "90000.00",
+      "balance": "10000.00",
+      "status": "active"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tconcept\tamount\tbalance\tstatus\n3\tCable USb Impresora\t10000.00\t10000.00\tactive\n2\tmicro sd de 64gb\t58000.00\t58000.00\tactive\n1\tCamara IP Interior\t90000.00\t10000.00\tactive\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

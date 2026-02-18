@@ -105,6 +105,7 @@ export default function ClientDetail() {
       setGeneralPaymentAmount("");
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
+      void utils.payments.getHistoryByClient.invalidate({ clientId });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago general");

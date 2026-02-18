@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, creditId, amount, createdAt FROM payments WHERE clientId = 3 ORDER BY createdAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 39APTXvo4uMgQep.root --database DeEuadowf9qAwz5LwVE6pc --execute SELECT id, creditId, amount, createdAt FROM payments WHERE clientId = 3 ORDER BY createdAt;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 347
+}
