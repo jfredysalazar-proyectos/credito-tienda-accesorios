@@ -481,7 +481,13 @@ export default function ClientDetail() {
 
       {/* Payment History */}
       {paymentHistory && paymentHistory.length > 0 && (
-        <PaymentHistory payments={paymentHistory} isLoading={paymentHistoryLoading} />
+        <PaymentHistory 
+          payments={paymentHistory} 
+          isLoading={paymentHistoryLoading}
+          clientName={client?.name}
+          clientCedula={client?.cedula}
+          clientPhone={client?.whatsappNumber}
+        />
       )}
     </div>
   );
