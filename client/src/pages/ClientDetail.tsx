@@ -81,6 +81,7 @@ export default function ClientDetail() {
       setSelectedCreditId(null);
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
+      void utils.payments.getHistoryByClient.invalidate({ clientId });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago");
