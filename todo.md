@@ -98,13 +98,11 @@
 - [ ] Probar en dispositivos reales
 
 
-## Bugs Encontrados - Sesión Actual
+## Bugs Encontrados y Corregidos - Sesión Actual
 - [x] PDF no descarga correctamente (CORREGIDO: clientId no se pasaba como prop, ahora agregado)
 - [x] Lógica de pagos permite montos mayores que la deuda (CORREGIDO: validación agregada)
 - [x] Mostrar saldo negativo cuando pago es mayor que deuda (CORREGIDO: ahora rechaza pagos mayores que saldo)
 - [x] Columnas del PDF superpuestas y no legibles (CORREGIDO: reescrito layout de tabla con mejor posicionamiento)
-
-
-## Bugs Encontrados - Sesión Actual (Distribución de Pagos)
 - [x] Distribución incorrecta de pagos entre múltiples créditos del cliente (CORREGIDO: cálculo de saldos actualizado)
-- [x] Los pagos se asignan a un solo crédito en lugar de distribuirse entre los créditos activos del cliente (CORREGIDO: estado actualizado a 'Pagado' cuando saldo es $0)
+- [x] Créditos con saldo $0 permanecían como 'Activo' (CORREGIDO: estado actualizado a 'Pagado' cuando saldo es $0)
+- [x] Historial de pagos no se refrescaba después de registrar (CORREGIDO: agregada invalidación de query)
