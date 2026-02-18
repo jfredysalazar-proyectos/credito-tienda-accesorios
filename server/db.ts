@@ -6,12 +6,23 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+  if (!_db) {
+    // Usar DATABASE_URL si está disponible, sino usar URL de fallback para Railway
+    const dbUrl = process.env.DATABASE_URL || 
+      (process.env.NODE_ENV === 'production' 
+        ? 'mysql://root:XbTyOVFHuKfMCIQpkZTwPgATTciuirfi@ballast.proxy.rlwy.net:42043/railway'
+        : null);
+    
+    if (dbUrl) {
+      try {
+        _db = drizzle(dbUrl);
+        console.log("[Database] Connected successfully");
+      } catch (error) {
+        console.warn("[Database] Failed to connect:", error);
+        _db = null;
+      }
+    } else {
+      console.warn("[Database] No DATABASE_URL configured");
     }
   }
   return _db;
