@@ -101,6 +101,8 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
+        console.log("[resetAdminPassword] Iniciando...");
+        console.log("[resetAdminPassword] DATABASE_URL:", process.env.DATABASE_URL ? "configurada" : "NO configurada");
         // Verificar la clave de seguridad
         const adminKey = process.env.ADMIN_RESET_KEY || "emergency-reset-key-change-me";
         if (input.adminKey !== adminKey) {
@@ -115,6 +117,7 @@ export const appRouter = router({
 
         // Actualizar la contraseña
         const db = await getDb();
+        console.log("[resetAdminPassword] DB disponible:", db ? "sí" : "no");
         if (!db) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
