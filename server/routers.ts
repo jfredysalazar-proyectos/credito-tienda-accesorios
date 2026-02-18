@@ -36,6 +36,15 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
 
+    debug: publicProcedure.query(async () => {
+      const db = await getDb();
+      return {
+        databaseUrl: process.env.DATABASE_URL ? "configurada" : "NO configurada",
+        dbAvailable: db ? "si" : "no",
+        nodeEnv: process.env.NODE_ENV,
+      };
+    }),
+
     login: publicProcedure
       .input(
         z.object({
