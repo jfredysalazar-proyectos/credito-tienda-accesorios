@@ -102,3 +102,4 @@
 - [x] PDF no descarga correctamente (CORREGIDO: clientId no se pasaba como prop, ahora agregado)
 - [x] Lógica de pagos permite montos mayores que la deuda (CORREGIDO: validación agregada)
 - [x] Mostrar saldo negativo cuando pago es mayor que deuda (CORREGIDO: ahora rechaza pagos mayores que saldo)
+- [x] Columnas del PDF superpuestas y no legibles (CORREGIDO: reescrito layout de tabla con mejor posicionamiento)

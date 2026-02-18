@@ -3,7 +3,7 @@ import PDFDocument from "pdfkit";
 export async function generatePaymentHistoryPDF(client: any, history: any[]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument();
+      const doc = new PDFDocument({ margin: 40 });
       const chunks: Buffer[] = [];
 
       doc.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -17,65 +17,123 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
         day: "numeric",
       });
 
-      const totalPaid = history.reduce((sum, p) => sum + p.amount, 0);
+      const totalPaid = history.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
 
       // Encabezado
-      doc.fontSize(20).font('Helvetica-Bold').text('Historial de Pagos', { align: 'center' });
-      doc.moveDown(0.5);
-      doc.fontSize(12).font('Helvetica').text(`Cliente: ${client.name}`);
+      doc.fontSize(18).font('Helvetica-Bold').text('Historial de Pagos', { align: 'center' });
+      doc.moveDown(0.3);
+      
+      doc.fontSize(11).font('Helvetica');
+      doc.text(`Cliente: ${client.name}`);
       doc.text(`Cédula: ${client.cedula}`);
       doc.text(`Teléfono: ${client.whatsappNumber}`);
       doc.text(`Fecha de Reporte: ${formattedDate}`);
-      doc.moveDown(1);
+      doc.moveDown(0.8);
 
-      // Tabla de pagos
-      const tableTop = doc.y;
-      const col1 = 50;
-      const col2 = 120;
-      const col3 = 200;
-      const col4 = 280;
-      const col5 = 360;
-      const col6 = 420;
-      const col7 = 480;
+      // Tabla de pagos con mejor formato
+      const pageWidth = doc.page.width - 80; // 40 de margen en cada lado
+      const colWidths = {
+        fecha: 60,
+        concepto: 80,
+        saldoAnterior: 70,
+        pago: 70,
+        nuevoSaldo: 70,
+        formaPago: 65,
+        notas: 50
+      };
 
-      // Encabezados de tabla
+      const startX = 40;
+      const rowHeight = 20;
+      let y = doc.y;
+
+      // Función para dibujar una fila
+      const drawRow = (
+        fecha: string,
+        concepto: string,
+        saldoAnterior: string,
+        pago: string,
+        nuevoSaldo: string,
+        formaPago: string,
+        notas: string,
+        isBold: boolean = false
+      ) => {
+        const font = isBold ? 'Helvetica-Bold' : 'Helvetica';
+        const fontSize = isBold ? 10 : 9;
+        
+        doc.fontSize(fontSize).font(font);
+        
+        // Dibujar cada celda
+        let x = startX;
+        
+        // Fecha
+        doc.text(fecha, x, y, { width: colWidths.fecha, align: 'left' });
+        x += colWidths.fecha + 5;
+        
+        // Concepto
+        doc.text(concepto, x, y, { width: colWidths.concepto, align: 'left' });
+        x += colWidths.concepto + 5;
+        
+        // Saldo Anterior
+        doc.text(saldoAnterior, x, y, { width: colWidths.saldoAnterior, align: 'right' });
+        x += colWidths.saldoAnterior + 5;
+        
+        // Pago
+        doc.text(pago, x, y, { width: colWidths.pago, align: 'right' });
+        x += colWidths.pago + 5;
+        
+        // Nuevo Saldo
+        doc.text(nuevoSaldo, x, y, { width: colWidths.nuevoSaldo, align: 'right' });
+        x += colWidths.nuevoSaldo + 5;
+        
+        // Forma de Pago
+        doc.text(formaPago, x, y, { width: colWidths.formaPago, align: 'left' });
+        x += colWidths.formaPago + 5;
+        
+        // Notas
+        doc.text(notas, x, y, { width: colWidths.notas, align: 'left' });
+        
+        y += rowHeight;
+      };
+
+      // Encabezados
       doc.fontSize(10).font('Helvetica-Bold');
-      doc.text('Fecha', col1, tableTop);
-      doc.text('Concepto', col2, tableTop);
-      doc.text('Saldo Anterior', col3, tableTop);
-      doc.text('Pago', col4, tableTop);
-      doc.text('Nuevo Saldo', col5, tableTop);
-      doc.text('Forma de Pago', col6, tableTop);
-      doc.text('Notas', col7, tableTop);
-
-      doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke();
-      doc.moveDown(1);
+      drawRow('Fecha', 'Concepto', 'Saldo Anterior', 'Pago', 'Nuevo Saldo', 'Forma de Pago', 'Notas', true);
+      
+      // Línea separadora
+      doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
+      y += 5;
 
       // Filas de datos
       doc.fontSize(9).font('Helvetica');
-      history.forEach((payment) => {
-        const y = doc.y;
+      history.forEach((payment: any) => {
         const fecha = new Date(payment.createdAt).toLocaleDateString("es-CO");
-        doc.text(fecha, col1, y, { width: 60 });
-        doc.text(payment.concept, col2, y, { width: 70 });
-        doc.text(`$${payment.previousBalance.toLocaleString("es-CO")}`, col3, y, { width: 70, align: 'right' });
-        doc.text(`$${payment.amount.toLocaleString("es-CO")}`, col4, y, { width: 70, align: 'right' });
-        doc.text(`$${payment.newBalance.toLocaleString("es-CO")}`, col5, y, { width: 70, align: 'right' });
-        doc.text(payment.paymentMethod, col6, y, { width: 60 });
-        doc.text(payment.notes || "-", col7, y, { width: 50 });
-        doc.moveDown(0.8);
+        const saldoAnterior = `$${Number(payment.previousBalance).toLocaleString("es-CO")}`;
+        const pago = `$${Number(payment.amount).toLocaleString("es-CO")}`;
+        const nuevoSaldo = `$${Number(payment.newBalance).toLocaleString("es-CO")}`;
+        
+        drawRow(
+          fecha,
+          payment.concept || '-',
+          saldoAnterior,
+          pago,
+          nuevoSaldo,
+          payment.paymentMethod || '-',
+          payment.notes || '-'
+        );
       });
 
-      doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-      doc.moveDown(0.5);
+      // Línea separadora final
+      doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
+      y += 10;
 
       // Resumen
       doc.fontSize(12).font('Helvetica-Bold');
-      doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`);
+      doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, { align: 'right' });
       doc.moveDown(1);
 
       // Pie de página
-      doc.fontSize(10).font('Helvetica').text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', { align: 'center' });
+      doc.fontSize(9).font('Helvetica');
+      doc.text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', { align: 'center' });
       doc.text(`Generado el ${formattedDate}`, { align: 'center' });
 
       doc.end();
