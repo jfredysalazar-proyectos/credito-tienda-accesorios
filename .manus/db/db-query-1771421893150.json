@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, email, passwordHash FROM users WHERE email = 'admin@creditotienda.local' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 39APTXvo4uMgQep.root --database DeEuadowf9qAwz5LwVE6pc --execute SELECT id, email, passwordHash FROM users WHERE email = 'admin@creditotienda.local' LIMIT 1;",
+  "rows": [
+    {
+      "id": "8",
+      "email": "admin@creditotienda.local",
+      "passwordHash": "90c6416da16b4d7a6bf77448106492f0:c8538eecd59f42354164b6604b85c26d1235cdb12faf4e58563f08680aa1334ef942ba129caddfd89e242cdfbc25b56abf9bea16f39687cb86591028a7df7244"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tpasswordHash\n8\tadmin@creditotienda.local\t90c6416da16b4d7a6bf77448106492f0:c8538eecd59f42354164b6604b85c26d1235cdb12faf4e58563f08680aa1334ef942ba129caddfd89e242cdfbc25b56abf9bea16f39687cb86591028a7df7244\n",
+  "stderr": "",
+  "execution_time_ms": 341
+}

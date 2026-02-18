@@ -23,6 +23,8 @@ import {
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
+import { eq } from "drizzle-orm";
+import { users } from "../drizzle/schema";
 import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
 // Updated: 2026-02-17 - Force Railway redeploy
 
@@ -87,6 +89,55 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+
+    // Procedimiento de emergencia para resetear contraseña del admin
+    resetAdminPassword: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          newPassword: z.string().min(6),
+          adminKey: z.string(), // Clave de seguridad
+        })
+      )
+      .mutation(async ({ input }) => {
+        // Verificar la clave de seguridad
+        const adminKey = process.env.ADMIN_RESET_KEY || "emergency-reset-key-change-me";
+        if (input.adminKey !== adminKey) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Clave de administrador incorrecta",
+          });
+        }
+
+        // Generar nuevo hash
+        const passwordHash = await hashPassword(input.newPassword);
+
+        // Actualizar la contraseña
+        const db = await import("./db").then((m) => m.getDb());
+        if (!db) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Base de datos no disponible",
+          });
+        }
+
+        const result = await db
+          .update(users)
+          .set({ passwordHash })
+          .where(eq(users.email, input.email));
+
+        if (!result) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Usuario no encontrado",
+          });
+        }
+
+        return {
+          success: true,
+          message: "Contraseña actualizada correctamente",
+        };
+      }),
   }),
 
   // ============ CLIENT ROUTERS ============
