@@ -559,9 +559,12 @@ export const appRouter = router({
         // Generar contenido HTML para el PDF
         const htmlContent = generatePaymentHistoryHTML(client, history);
         
+        // Convertir HTML a base64 para que el navegador lo descargue
+        const base64Html = Buffer.from(htmlContent).toString("base64");
+        
         return {
           success: true,
-          html: htmlContent,
+          html: base64Html,
           filename: `historial-pagos-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`,
         };
       }),
