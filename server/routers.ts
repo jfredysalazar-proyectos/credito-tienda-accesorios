@@ -20,6 +20,7 @@ import {
   getDashboardSummary,
   createGeneralPayment,
   getPaymentsByCredit,
+  getDb,
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
@@ -113,7 +114,7 @@ export const appRouter = router({
         const passwordHash = await hashPassword(input.newPassword);
 
         // Actualizar la contraseña
-        const db = await import("./db").then((m) => m.getDb());
+        const db = await getDb();
         if (!db) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
@@ -121,22 +122,23 @@ export const appRouter = router({
           });
         }
 
-        const result = await db
-          .update(users)
-          .set({ passwordHash })
-          .where(eq(users.email, input.email));
+        try {
+          await db
+            .update(users)
+            .set({ passwordHash })
+            .where(eq(users.email, input.email));
 
-        if (!result) {
+          return {
+            success: true,
+            message: "Contraseña actualizada correctamente",
+          };
+        } catch (error) {
+          console.error("[resetAdminPassword] Error:", error);
           throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Usuario no encontrado",
+            code: "INTERNAL_SERVER_ERROR",
+            message: error instanceof Error ? error.message : "Error desconocido",
           });
         }
-
-        return {
-          success: true,
-          message: "Contraseña actualizada correctamente",
-        };
       }),
   }),
 
