@@ -472,6 +472,8 @@ export const appRouter = router({
         z.object({
           clientId: z.number(),
           amount: z.number().positive(),
+          paymentMethod: z.string().default("cash"),
+          notes: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -486,7 +488,9 @@ export const appRouter = router({
         const result = await createGeneralPayment(
           input.clientId,
           input.amount,
-          ctx.user.id
+          ctx.user.id,
+          input.paymentMethod,
+          input.notes
         );
 
         await createWhatsappLog({

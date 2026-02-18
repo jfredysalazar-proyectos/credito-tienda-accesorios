@@ -232,7 +232,9 @@ export async function getDashboardSummary(userId: number) {
 export async function createGeneralPayment(
   clientId: number,
   amount: number,
-  userId: number
+  userId: number,
+  paymentMethod: string = "cash",
+  notes?: string
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -253,6 +255,7 @@ export async function createGeneralPayment(
 
   let remainingAmount = amount;
   const paymentsToCreate: InsertPayment[] = [];
+  const creditsToUpdate: Array<{ id: number; newBalance: number }> = [];
 
   // Distribuir el pago entre los créditos activos
   for (const credit of activeCredits) {
@@ -260,14 +263,22 @@ export async function createGeneralPayment(
 
     const creditBalance = Number(credit.balance);
     const paymentAmount = Math.min(remainingAmount, creditBalance);
+    const newBalance = Math.max(0, creditBalance - paymentAmount);
 
     // Crear pago para este crédito
     paymentsToCreate.push({
       creditId: credit.id,
       clientId: clientId,
       amount: paymentAmount.toString(),
-      paymentMethod: "general_payment",
+      paymentMethod: paymentMethod,
+      notes: notes,
       createdAt: new Date(),
+    });
+
+    // Registrar actualización de balance
+    creditsToUpdate.push({
+      id: credit.id,
+      newBalance,
     });
 
     remainingAmount -= paymentAmount;
@@ -276,6 +287,14 @@ export async function createGeneralPayment(
   // Insertar todos los pagos
   if (paymentsToCreate.length > 0) {
     await db.insert(payments).values(paymentsToCreate);
+  }
+
+  // Actualizar balance de los créditos
+  for (const credit of creditsToUpdate) {
+    await db
+      .update(credits)
+      .set({ balance: credit.newBalance.toString() })
+      .where(eq(credits.id, credit.id));
   }
 
   return {

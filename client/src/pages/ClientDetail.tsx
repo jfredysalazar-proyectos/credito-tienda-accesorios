@@ -43,6 +43,8 @@ export default function ClientDetail() {
   const [selectedCreditId, setSelectedCreditId] = useState<number | null>(null);
   const [expandedCredits, setExpandedCredits] = useState<Set<number>>(new Set());
   const [generalPaymentAmount, setGeneralPaymentAmount] = useState("");
+  const [generalPaymentMethod, setGeneralPaymentMethod] = useState("cash");
+  const [generalPaymentNotes, setGeneralPaymentNotes] = useState("");
 
   const { data: client, isLoading: clientLoading } = trpc.clients.getById.useQuery(
     { clientId },
@@ -279,6 +281,32 @@ export default function ClientDetail() {
                   min="0"
                 />
               </div>
+              <div>
+                <Label htmlFor="payment-method">Forma de Pago</Label>
+                <Select value={generalPaymentMethod} onValueChange={setGeneralPaymentMethod}>
+                  <SelectTrigger id="payment-method">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Efectivo</SelectItem>
+                    <SelectItem value="transfer">Transferencia</SelectItem>
+                    <SelectItem value="check">Cheque</SelectItem>
+                    <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
+                    <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
+                    <SelectItem value="other">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="payment-notes">Notas (Opcional)</Label>
+                <Textarea
+                  id="payment-notes"
+                  placeholder="Agrega notas sobre este pago..."
+                  value={generalPaymentNotes}
+                  onChange={(e) => setGeneralPaymentNotes(e.target.value)}
+                  className="resize-none"
+                />
+              </div>
               <Button
                 onClick={() => {
                   const amount = parseFloat(generalPaymentAmount);
@@ -293,7 +321,12 @@ export default function ClientDetail() {
                   createGeneralPaymentMutation.mutate({
                     clientId,
                     amount,
+                    paymentMethod: generalPaymentMethod,
+                    notes: generalPaymentNotes || undefined,
                   });
+                  setGeneralPaymentAmount("");
+                  setGeneralPaymentMethod("cash");
+                  setGeneralPaymentNotes("");
                 }}
                 disabled={createGeneralPaymentMutation.isPending}
                 className="w-full"
