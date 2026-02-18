@@ -106,5 +106,5 @@
 
 
 ## Bugs Encontrados - Sesión Actual (Distribución de Pagos)
-- [ ] Distribución incorrecta de pagos entre múltiples créditos del cliente (muestra $116.000 cuando debería ser $141.000)
-- [ ] Los pagos se asignan a un solo crédito en lugar de distribuirse entre los créditos activos del cliente
+- [x] Distribución incorrecta de pagos entre múltiples créditos del cliente (CORREGIDO: cálculo de saldos actualizado)
+- [x] Los pagos se asignan a un solo crédito en lugar de distribuirse entre los créditos activos del cliente (CORREGIDO: estado actualizado a 'Pagado' cuando saldo es $0)
