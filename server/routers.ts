@@ -38,10 +38,58 @@ export const appRouter = router({
 
     debug: publicProcedure.query(async () => {
       const db = await getDb();
+      let adminUser: typeof users.$inferSelect | null = null;
+      let allUsers: Array<{
+        id: number;
+        email: string;
+        name: string | null;
+        status: string;
+        role: string;
+      }> = [];
+      let error: string | null = null;
+
+      if (db) {
+        try {
+          // Intentar obtener el usuario admin
+          const result = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, "admin@creditotienda.local"))
+            .limit(1);
+          adminUser = result.length > 0 ? result[0] : null;
+
+          // Obtener todos los usuarios para debugging
+          const allUsersResult = await db.select().from(users);
+          allUsers = allUsersResult.map((u: typeof users.$inferSelect) => ({
+            id: u.id,
+            email: u.email,
+            name: u.name || "",
+            status: u.status,
+            role: u.role,
+          }));
+        } catch (e) {
+          error = String(e);
+        }
+      }
+
       return {
         databaseUrl: process.env.DATABASE_URL ? "configurada" : "NO configurada",
         dbAvailable: db ? "si" : "no",
         nodeEnv: process.env.NODE_ENV,
+        adminUserExists: adminUser ? "si" : "no",
+        adminUser: adminUser
+          ? {
+              id: adminUser.id,
+              email: adminUser.email,
+              name: adminUser.name || "",
+              status: adminUser.status,
+              role: adminUser.role,
+              passwordHashLength: adminUser.passwordHash?.length || 0,
+            }
+          : null,
+        totalUsers: allUsers.length,
+        allUsers: allUsers,
+        error: error,
       };
     }),
 
