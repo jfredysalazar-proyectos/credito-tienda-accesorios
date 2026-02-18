@@ -157,10 +157,10 @@ export default function PaymentHistory({ payments, isLoading, clientName, client
     const opt = {
       margin: 10,
       filename: `historial-pagos-${clientName?.replace(/\s+/g, "-") || "cliente"}-${now.toISOString().split("T")[0]}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
+      image: { type: "image/jpeg" as any, quality: 0.98 },
       html2canvas: { scale: 2 },
-      jsPDF: { orientation: "landscape", unit: "mm", format: "a4" },
-    };
+      jsPDF: { orientation: "landscape" as any, unit: "mm", format: "a4" },
+    } as any;
 
     html2pdf().set(opt).from(element).save();
     setIsExporting(false);
