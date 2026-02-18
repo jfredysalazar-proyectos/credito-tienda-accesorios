@@ -124,17 +124,25 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
 
       // Línea separadora final
       doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
-      y += 10;
-
-      // Resumen
-      doc.fontSize(12).font('Helvetica-Bold');
-      doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, { align: 'right' });
       doc.moveDown(1);
 
-      // Pie de página
+      // Resumen - Total Pagado en su propia línea
+      doc.fontSize(12).font('Helvetica-Bold');
+      doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
+      doc.moveDown(2);
+
+      // Pie de página - ancho completo, centrado
+      const footerY = doc.page.height - 60; // 60 puntos desde el fondo
       doc.fontSize(9).font('Helvetica');
-      doc.text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', { align: 'center' });
-      doc.text(`Generado el ${formattedDate}`, { align: 'center' });
+      doc.moveTo(startX, footerY - 10).lineTo(doc.page.width - startX, footerY - 10).stroke();
+      doc.text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', startX, footerY, { 
+        width: pageWidth, 
+        align: 'center' 
+      });
+      doc.text(`Generado el ${formattedDate}`, startX, footerY + 15, { 
+        width: pageWidth, 
+        align: 'center' 
+      });
 
       doc.end();
     } catch (error) {
