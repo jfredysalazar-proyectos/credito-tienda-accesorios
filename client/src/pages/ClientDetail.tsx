@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import EditClientForm from "@/components/EditClientForm";
+import PaymentHistory from "@/components/PaymentHistory";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -52,6 +53,11 @@ export default function ClientDetail() {
   );
 
   const { data: credits, isLoading: creditsLoading } = trpc.credits.getByClientId.useQuery(
+    { clientId },
+    { enabled: isAuthenticated && clientId > 0 }
+  );
+
+  const { data: paymentHistory, isLoading: paymentHistoryLoading } = trpc.payments.getHistoryByClient.useQuery(
     { clientId },
     { enabled: isAuthenticated && clientId > 0 }
   );
@@ -472,6 +478,11 @@ export default function ClientDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment History */}
+      {paymentHistory && paymentHistory.length > 0 && (
+        <PaymentHistory payments={paymentHistory} isLoading={paymentHistoryLoading} />
+      )}
     </div>
   );
 }

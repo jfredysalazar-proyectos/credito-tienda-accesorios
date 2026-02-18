@@ -20,6 +20,7 @@ import {
   getDashboardSummary,
   createGeneralPayment,
   getPaymentsByCredit,
+  getPaymentHistoryByClient,
   getDb,
 } from "./db";
 import { TRPCError } from "@trpc/server";
@@ -525,6 +526,20 @@ export const appRouter = router({
         }
 
         return getPaymentsByCredit(input.creditId);
+      }),
+
+    getHistoryByClient: protectedProcedure
+      .input(z.object({ clientId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const client = await getClientById(input.clientId, ctx.user.id);
+        if (!client) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No tienes permiso para acceder a este historial",
+          });
+        }
+
+        return getPaymentHistoryByClient(input.clientId, ctx.user.id);
       }),
   }),
 

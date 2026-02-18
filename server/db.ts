@@ -317,3 +317,66 @@ export async function getPaymentsByCredit(creditId: number) {
 
   return result;
 }
+
+// ============ GET PAYMENT HISTORY FOR CLIENT ============
+
+export async function getPaymentHistoryByClient(clientId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar que el cliente pertenece al usuario
+  const client = await getClientById(clientId, userId);
+  if (!client) throw new Error("Client not found");
+
+  // Obtener todos los créditos del cliente
+  const clientCredits = await db
+    .select()
+    .from(credits)
+    .where(eq(credits.clientId, clientId));
+
+  // Obtener todos los pagos de los créditos del cliente
+  const allPayments = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.clientId, clientId));
+
+  // Ordenar pagos por fecha
+  const sortedPayments = allPayments.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+
+  // Calcular saldos anteriores y nuevos para cada pago
+  const paymentHistory = sortedPayments.map((payment, index) => {
+    // Encontrar el crédito asociado
+    const credit = clientCredits.find((c) => c.id === payment.creditId);
+    if (!credit) return null;
+
+    // Calcular saldo anterior
+    let previousBalance = Number(credit.amount);
+    
+    // Restar todos los pagos anteriores a este
+    for (let i = 0; i < index; i++) {
+      if (sortedPayments[i]?.creditId === payment.creditId) {
+        previousBalance -= Number(sortedPayments[i]!.amount);
+      }
+    }
+
+    const paymentAmount = Number(payment.amount);
+    const newBalance = Math.max(0, previousBalance - paymentAmount);
+
+    return {
+      id: payment.id,
+      creditId: payment.creditId,
+      clientId: payment.clientId,
+      amount: paymentAmount,
+      paymentMethod: payment.paymentMethod,
+      notes: payment.notes,
+      createdAt: payment.createdAt,
+      previousBalance,
+      newBalance,
+      concept: credit.concept,
+    };
+  }).filter((p) => p !== null);
+
+  return paymentHistory;
+}
