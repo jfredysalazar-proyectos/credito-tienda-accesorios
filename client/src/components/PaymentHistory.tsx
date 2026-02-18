@@ -92,78 +92,87 @@ export default function PaymentHistory({ payments, isLoading, clientName, client
 
   const totalPaid = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
 
-  const handleExportPDF = () => {
-    setIsExporting(true);
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString("es-CO", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const handleExportPDF = async () => {
+    try {
+      setIsExporting(true);
+      const now = new Date();
+      const formattedDate = now.toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
-    const element = document.createElement("div");
-    element.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <div style="margin-bottom: 30px; border-bottom: 2px solid #3498db; padding-bottom: 15px;">
-          <h1 style="margin: 0; color: #2c3e50;">Historial de Pagos</h1>
-          <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clientName || "N/A"}</p>
-          <p style="margin: 5px 0;"><strong>Cédula:</strong> ${clientCedula || "N/A"}</p>
-          <p style="margin: 5px 0;"><strong>Teléfono:</strong> ${clientPhone || "N/A"}</p>
-          <p style="margin: 5px 0;"><strong>Fecha de Reporte:</strong> ${formattedDate}</p>
-        </div>
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <div style="margin-bottom: 30px; border-bottom: 2px solid #3498db; padding-bottom: 15px;">
+            <h1 style="margin: 0; color: #2c3e50;">Historial de Pagos</h1>
+            <p style="margin: 5px 0;"><strong>Cliente:</strong> ${clientName || "N/A"}</p>
+            <p style="margin: 5px 0;"><strong>Cédula:</strong> ${clientCedula || "N/A"}</p>
+            <p style="margin: 5px 0;"><strong>Teléfono:</strong> ${clientPhone || "N/A"}</p>
+            <p style="margin: 5px 0;"><strong>Fecha de Reporte:</strong> ${formattedDate}</p>
+          </div>
 
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-          <thead>
-            <tr style="background: #3498db; color: white;">
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Fecha</th>
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Concepto</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Saldo Anterior</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Pago</th>
-              <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Nuevo Saldo</th>
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Forma de Pago</th>
-              <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Notas</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredPayments
-              .map(
-                (payment) => `
-              <tr>
-                <td style="padding: 8px; border: 1px solid #ddd;">${new Date(payment.createdAt).toLocaleDateString("es-CO")}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${payment.concept}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${payment.previousBalance.toLocaleString("es-CO")}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #e74c3c;">-$${payment.amount.toLocaleString("es-CO")}</td>
-                <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #27ae60;">$${payment.newBalance.toLocaleString("es-CO")}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${paymentMethodLabels[payment.paymentMethod] || payment.paymentMethod}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${payment.notes || "-"}</td>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+              <tr style="background: #3498db; color: white;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Fecha</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Concepto</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Saldo Anterior</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Pago</th>
+                <th style="padding: 10px; text-align: right; border: 1px solid #ddd;">Nuevo Saldo</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Forma de Pago</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Notas</th>
               </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${filteredPayments
+                .map(
+                  (payment) => `
+                <tr>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${new Date(payment.createdAt).toLocaleDateString("es-CO")}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${payment.concept}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">$${payment.previousBalance.toLocaleString("es-CO")}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #e74c3c;">-$${payment.amount.toLocaleString("es-CO")}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #27ae60;">$${payment.newBalance.toLocaleString("es-CO")}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${paymentMethodLabels[payment.paymentMethod] || payment.paymentMethod}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${payment.notes || "-"}</td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
 
-        <div style="background: #e8f8f5; padding: 15px; border-left: 4px solid #27ae60; margin-top: 20px;">
-          <div style="font-size: 16px; font-weight: bold; color: #27ae60;">Total Pagado: $${totalPaid.toLocaleString("es-CO")}</div>
+          <div style="background: #e8f8f5; padding: 15px; border-left: 4px solid #27ae60; margin-top: 20px;">
+            <div style="font-size: 16px; font-weight: bold; color: #27ae60;">Total Pagado: $${totalPaid.toLocaleString("es-CO")}</div>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 12px;">
+            <p>Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.</p>
+            <p>Generado el ${formattedDate}</p>
+          </div>
         </div>
+      `;
 
-        <div style="margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 12px;">
-          <p>Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.</p>
-          <p>Generado el ${formattedDate}</p>
-        </div>
-      </div>
-    `;
+      const element = document.createElement("div");
+      element.innerHTML = htmlContent;
+      document.body.appendChild(element);
 
-    const opt = {
-      margin: 10,
-      filename: `historial-pagos-${clientName?.replace(/\s+/g, "-") || "cliente"}-${now.toISOString().split("T")[0]}.pdf`,
-      image: { type: "image/jpeg" as any, quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: "landscape" as any, unit: "mm", format: "a4" },
-    } as any;
+      const opt = {
+        margin: 10,
+        filename: `historial-pagos-${clientName?.replace(/\s+/g, "-") || "cliente"}-${now.toISOString().split("T")[0]}.pdf`,
+        image: { type: "image/jpeg" as any, quality: 0.98 },
+        html2canvas: { scale: 2, logging: false },
+        jsPDF: { orientation: "landscape" as any, unit: "mm", format: "a4" },
+      } as any;
 
-    html2pdf().set(opt).from(element).save();
-    setIsExporting(false);
+      await html2pdf().set(opt).from(element).save();
+      document.body.removeChild(element);
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (isLoading) {
