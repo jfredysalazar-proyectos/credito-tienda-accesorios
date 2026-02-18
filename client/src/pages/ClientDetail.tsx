@@ -487,6 +487,7 @@ export default function ClientDetail() {
           clientName={client?.name}
           clientCedula={client?.cedula}
           clientPhone={client?.whatsappNumber}
+          clientId={clientId}
         />
       )}
     </div>
