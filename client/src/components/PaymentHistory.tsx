@@ -259,7 +259,7 @@ export default function PaymentHistory({
               <TableHeader>
                 <TableRow>
                   <TableHead>Fecha</TableHead>
-                  <TableHead>Concepto</TableHead>
+                  <TableHead>Item donde se aplicó Pago</TableHead>
                   <TableHead className="text-right">Saldo Anterior</TableHead>
                   <TableHead className="text-right">Pago</TableHead>
                   <TableHead className="text-right">Nuevo Saldo</TableHead>
