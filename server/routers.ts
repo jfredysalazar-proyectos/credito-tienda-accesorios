@@ -28,7 +28,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
 import { eq } from "drizzle-orm";
-import { users } from "../drizzle/schema";
+import { users, payments } from "../drizzle/schema";
 import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
 // Updated: 2026-02-17 - Force Railway redeploy
