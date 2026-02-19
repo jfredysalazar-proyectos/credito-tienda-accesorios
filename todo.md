@@ -121,3 +121,9 @@
 - [x] Aumentar espacio para columna "Saldo Anterior" en PDF
 - [x] Aumentar espacio para columna "Item donde se aplicó" en PDF
 - [x] Agregar fila "Saldo Por Pagar" debajo de "Total Pagado" en PDF
+
+
+## Mejoras Adicionales en Reporte PDF
+- [x] Traducir "Forma de Pago" al español en PDF (Efectivo, Transferencia, etc.)
+- [x] Aumentar altura de fila de encabezados en PDF para mejor espaciado
+- [x] Verificar que "Saldo Por Pagar" muestra saldo total adeudado
