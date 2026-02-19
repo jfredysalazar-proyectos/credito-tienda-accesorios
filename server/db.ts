@@ -372,38 +372,40 @@ export async function getPaymentHistoryByClient(clientId: number, userId: number
     .where(eq(payments.clientId, clientId))
     .orderBy((p) => p.createdAt);
 
-  // Para cada pago, calcular el saldo anterior y nuevo
-  const paymentHistory = allPayments.map((payment) => {
-    // Encontrar el crédito asociado
-    const credit = clientCredits.find((c) => c.id === payment.creditId);
-    if (!credit) return null;
-
-    // Calcular saldo anterior: es el balance actual más los pagos posteriores
-    let previousBalance = Number(credit.balance);
+  // Para cada crédito, calcular el historial de pagos con saldos correctos
+  const paymentHistory: any[] = [];
+  
+  for (const credit of clientCredits) {
+    // Obtener todos los pagos de este crédito, ordenados por fecha
+    const creditPayments = allPayments.filter((p) => p.creditId === credit.id);
     
-    // Sumar todos los pagos posteriores a este para obtener el saldo anterior
-    for (const p of allPayments) {
-      if (p.creditId === payment.creditId && new Date(p.createdAt) > new Date(payment.createdAt)) {
-        previousBalance += Number(p.amount);
-      }
+    // Calcular saldos para cada pago de este crédito
+    let runningBalance = Number(credit.amount); // Comenzar con el monto original
+    
+    for (const payment of creditPayments) {
+      const previousBalance = runningBalance;
+      const paymentAmount = Number(payment.amount);
+      const newBalance = Math.max(0, runningBalance - paymentAmount);
+      
+      paymentHistory.push({
+        id: payment.id,
+        creditId: payment.creditId,
+        clientId: payment.clientId,
+        amount: paymentAmount,
+        paymentMethod: payment.paymentMethod,
+        notes: payment.notes,
+        createdAt: payment.createdAt,
+        previousBalance,
+        newBalance,
+        concept: credit.concept,
+      });
+      
+      runningBalance = newBalance;
     }
-
-    const paymentAmount = Number(payment.amount);
-    const newBalance = Math.max(0, previousBalance - paymentAmount);
-
-    return {
-      id: payment.id,
-      creditId: payment.creditId,
-      clientId: payment.clientId,
-      amount: paymentAmount,
-      paymentMethod: payment.paymentMethod,
-      notes: payment.notes,
-      createdAt: payment.createdAt,
-      previousBalance,
-      newBalance,
-      concept: credit.concept,
-    };
-  }).filter((p) => p !== null);
+  }
+  
+  // Ordenar por fecha de creación
+  paymentHistory.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return paymentHistory;
 }
