@@ -1,7 +1,8 @@
 import PDFDocument from "pdfkit";
+import axios from "axios";
 
-export async function generatePaymentHistoryPDF(client: any, history: any[], credits: any[] = []): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
+export async function generatePaymentHistoryPDF(client: any, history: any[], credits: any[] = [], company?: any): Promise<Buffer> {
+  return new Promise(async (resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 40 });
       const chunks: Buffer[] = [];
@@ -19,13 +20,11 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
 
       const totalPaid = history.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
       
-      // Calcular saldo total adeudado (suma de todos los créditos activos)
       const balanceDue = credits.reduce((sum: number, credit: any) => {
         const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
         return credit.status === 'active' ? sum + creditBalance : sum;
       }, 0);
       
-      // Mapeo de métodos de pago al español
       const paymentMethodMap: Record<string, string> = {
         'cash': 'Efectivo',
         'transfer': 'Transferencia',
@@ -37,9 +36,40 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       };
 
       // ============ ENCABEZADO CON MEMBRETE ============
-      doc.fontSize(14).font('Helvetica-Bold').text('CréditoTienda', { align: 'center' });
-      doc.fontSize(10).font('Helvetica').text('Sistema de Gestión de Créditos', { align: 'center' });
-      doc.fontSize(9).font('Helvetica').text('Teléfono: +57 1 234 5678 | Email: info@creditotienda.com', { align: 'center' });
+      
+      // Intentar cargar el logo si existe
+      if (company?.logoUrl) {
+        try {
+          const response = await axios.get(company.logoUrl, { responseType: 'arraybuffer' });
+          const logoBuffer = Buffer.from(response.data, 'binary');
+          doc.image(logoBuffer, 40, 40, { width: 60 });
+          doc.moveDown(1);
+        } catch (e) {
+          console.error("Error cargando logo:", e);
+        }
+      }
+
+      const companyName = company?.name || 'CréditoTienda';
+      const companyNit = company?.nit ? `NIT/CC: ${company.nit}` : '';
+      const companyAddress = company?.address || '';
+      const companyCity = company?.city || '';
+      const companyPhone = company?.phone || '+57 1 234 5678';
+      const companyWhatsapp = company?.whatsapp || '';
+
+      doc.fontSize(14).font('Helvetica-Bold').text(companyName, { align: 'center' });
+      if (companyNit) {
+        doc.fontSize(10).font('Helvetica').text(companyNit, { align: 'center' });
+      }
+      
+      let contactInfo = '';
+      if (companyAddress) contactInfo += companyAddress;
+      if (companyCity) contactInfo += (contactInfo ? `, ${companyCity}` : companyCity);
+      if (contactInfo) doc.fontSize(9).font('Helvetica').text(contactInfo, { align: 'center' });
+
+      let phoneInfo = `Tel: ${companyPhone}`;
+      if (companyWhatsapp) phoneInfo += ` | WhatsApp: ${companyWhatsapp}`;
+      doc.fontSize(9).font('Helvetica').text(phoneInfo, { align: 'center' });
+      
       doc.moveDown(0.5);
       
       // Línea separadora
@@ -72,7 +102,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
         const headerRowHeight = 28;
         let y = doc.y;
 
-        // Función para dibujar fila de créditos
         const drawCreditRow = (
           concepto: string,
           monto: string,
@@ -86,36 +115,25 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
           doc.fontSize(fontSize).font(font);
           
           let x = startX;
-          
-          // Concepto
           doc.text(concepto, x, y, { width: colWidths.concepto, align: 'left' });
           x += colWidths.concepto + 5;
-          
-          // Monto
           doc.text(monto, x, y, { width: colWidths.monto, align: 'right' });
           x += colWidths.monto + 5;
-          
-          // Saldo
           doc.text(saldo, x, y, { width: colWidths.saldo, align: 'right' });
           x += colWidths.saldo + 5;
-          
-          // Vencimiento
           doc.text(vencimiento, x, y, { width: colWidths.vencimiento, align: 'center' });
           
           y += isBold ? headerRowHeight : rowHeight;
         };
 
-        // Encabezados de créditos
         doc.fontSize(10).font('Helvetica-Bold');
         const headerY = y;
         drawCreditRow('Concepto', 'Monto', 'Saldo Actual', 'Vencimiento', true);
         y = headerY + headerRowHeight;
         
-        // Línea separadora
         doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
         y += 5;
 
-        // Filas de créditos activos
         doc.fontSize(9).font('Helvetica');
         credits.filter((c: any) => c.status === 'active').forEach((credit: any) => {
           const monto = `$${Number(credit.amount).toLocaleString("es-CO")}`;
@@ -132,7 +150,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
           );
         });
 
-        // Línea separadora final
         doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
         doc.moveDown(1);
       }
@@ -141,7 +158,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       doc.fontSize(12).font('Helvetica-Bold').text('Historial de Pagos', { underline: true });
       doc.moveDown(0.3);
 
-      // Tabla de pagos con mejor formato
       const pageWidth = doc.page.width - 80;
       const colWidths = {
         fecha: 50,
@@ -158,7 +174,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       const headerRowHeight = 28;
       let y = doc.y;
 
-      // Función para dibujar una fila
       const drawRow = (
         fecha: string,
         concepto: string,
@@ -174,57 +189,38 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
         
         doc.fontSize(fontSize).font(font);
         
-        // Dibujar cada celda
         let x = startX;
-        
-        // Fecha
         doc.text(fecha, x, y, { width: colWidths.fecha, align: 'left' });
         x += colWidths.fecha + 5;
-        
-        // Concepto
         doc.text(concepto, x, y, { width: colWidths.concepto, align: 'left' });
         x += colWidths.concepto + 5;
-        
-        // Saldo Anterior
         doc.text(saldoAnterior, x, y, { width: colWidths.saldoAnterior, align: 'right' });
         x += colWidths.saldoAnterior + 5;
-        
-        // Pago
         doc.text(pago, x, y, { width: colWidths.pago, align: 'right' });
         x += colWidths.pago + 5;
-        
-        // Nuevo Saldo
         doc.text(nuevoSaldo, x, y, { width: colWidths.nuevoSaldo, align: 'right' });
         x += colWidths.nuevoSaldo + 5;
-        
-        // Forma de Pago
         doc.text(formaPago, x, y, { width: colWidths.formaPago, align: 'left' });
         x += colWidths.formaPago + 5;
-        
-        // Notas
         doc.text(notas, x, y, { width: colWidths.notas, align: 'left' });
         
         y += isBold ? headerRowHeight : rowHeight;
       };
 
-      // Encabezados
       doc.fontSize(10).font('Helvetica-Bold');
       const headerY = y;
       drawRow('Fecha', 'Item donde se aplicó Pago', 'Saldo Anterior', 'Pago', 'Nuevo Saldo', 'Forma de Pago', 'Notas', true);
       y = headerY + headerRowHeight;
       
-      // Línea separadora
       doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
       y += 5;
 
-      // Filas de datos
       doc.fontSize(9).font('Helvetica');
       history.forEach((payment: any) => {
         const fecha = new Date(payment.createdAt).toLocaleDateString("es-CO");
         const saldoAnterior = `$${Number(payment.previousBalance).toLocaleString("es-CO")}`;
         const pago = `$${Number(payment.amount).toLocaleString("es-CO")}`;
         const nuevoSaldo = `$${Number(payment.newBalance).toLocaleString("es-CO")}`;
-        // Traducir método de pago al español
         const formaPagoEspanol = paymentMethodMap[payment.paymentMethod] || payment.paymentMethod || '-';
         
         drawRow(
@@ -238,7 +234,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
         );
       });
 
-      // Línea separadora final
       doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
       doc.moveDown(1);
 
@@ -247,7 +242,6 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
       doc.moveDown(0.5);
       
-      // Saldo Por Pagar en nueva línea
       doc.text(`Saldo Por Pagar: $${balanceDue.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
       doc.moveDown(2);
 
@@ -255,7 +249,7 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       const footerY = Math.max(doc.y + 20, doc.page.height - 80);
       doc.fontSize(9).font('Helvetica');
       doc.moveTo(startX, footerY - 10).lineTo(doc.page.width - startX, footerY - 10).stroke();
-      doc.text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', startX, footerY, { 
+      doc.text(`Este reporte fue generado automáticamente por ${companyName}.`, startX, footerY, { 
         width: pageWidth, 
         align: 'center' 
       });

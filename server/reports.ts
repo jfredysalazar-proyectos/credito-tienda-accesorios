@@ -1,32 +1,46 @@
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { getDb } from "./db";
+import { getDb, getCompanyProfile } from "./db";
 import { eq } from "drizzle-orm";
 import { clients, credits, payments } from "../drizzle/schema";
 
-interface CreditWithPayments {
-  id: number;
-  clientId: number;
-  concept: string;
-  amount: string;
-  balance: string;
-  creditDays: number;
-  createdAt: Date;
-  dueDate: Date;
-}
-
-interface ClientInfo {
-  id: number;
-  name: string;
-  cedula: string;
-  creditLimit: string;
+async function addCompanyHeader(doc: jsPDF, userId: number): Promise<number> {
+  const company = await getCompanyProfile(userId);
+  let y = 15;
+  
+  if (company) {
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(company.name, 105, y, { align: "center" });
+    y += 7;
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`NIT/CC: ${company.nit}`, 105, y, { align: "center" });
+    y += 5;
+    
+    doc.text(`${company.address}, ${company.city}`, 105, y, { align: "center" });
+    y += 5;
+    
+    doc.text(`Tel: ${company.phone} | WhatsApp: ${company.whatsapp}`, 105, y, { align: "center" });
+    y += 10;
+    
+    doc.setLineWidth(0.5);
+    doc.line(14, y - 5, 196, y - 5);
+  } else {
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("CréditoTienda", 14, y);
+    y += 10;
+  }
+  
+  return y;
 }
 
 export async function generateOverdueCreditsReport(userId: number): Promise<Buffer> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Obtener créditos vencidos
   const userClients = await db.select().from(clients).where(eq(clients.userId, userId));
   const clientIds = userClients.map(c => c.id);
 
@@ -36,15 +50,19 @@ export async function generateOverdueCreditsReport(userId: number): Promise<Buff
     return dueDate && dueDate < new Date() && Number(credit.balance) > 0 && clientIds.includes(credit.clientId);
   });
 
-  // Crear PDF
   const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Reporte de Créditos Vencidos", 14, 15);
+  let y = await addCompanyHeader(doc, userId);
+  
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("Reporte de Créditos Vencidos", 14, y);
+  y += 7;
 
   doc.setFontSize(10);
-  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, 25);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, y);
+  y += 10;
 
-  // Tabla de créditos vencidos
   const tableData = overdueCredits.map(credit => {
     const client = userClients.find(c => c.id === credit.clientId);
     const dueDate = credit.dueDate ? new Date(credit.dueDate) : new Date();
@@ -62,7 +80,7 @@ export async function generateOverdueCreditsReport(userId: number): Promise<Buff
   (doc as any).autoTable({
     head: [["Cliente", "Concepto", "Monto Original", "Saldo", "Fecha Vencimiento", "Días Vencido"]],
     body: tableData,
-    startY: 35,
+    startY: y,
     styles: { fontSize: 9 },
   });
 
@@ -76,7 +94,6 @@ export async function generateClientDebtReport(userId: number): Promise<Buffer> 
   const userClients = await db.select().from(clients).where(eq(clients.userId, userId));
   const allCredits = await db.select().from(credits);
 
-  // Calcular deuda por cliente
   const clientDebts = userClients.map(client => {
     const clientCredits = allCredits.filter(c => c.clientId === client.id);
     const totalDebt = clientCredits.reduce((sum, c) => sum + Number(c.balance), 0);
@@ -89,15 +106,19 @@ export async function generateClientDebtReport(userId: number): Promise<Buffer> 
     };
   }).sort((a, b) => b.totalDebt - a.totalDebt);
 
-  // Crear PDF
   const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Reporte de Deuda por Cliente", 14, 15);
+  let y = await addCompanyHeader(doc, userId);
+  
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("Reporte de Deuda por Cliente", 14, y);
+  y += 7;
 
   doc.setFontSize(10);
-  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, 25);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, y);
+  y += 10;
 
-  // Tabla de deudas
   const tableData = clientDebts.map(client => [
     client.name,
     client.cedula,
@@ -110,7 +131,7 @@ export async function generateClientDebtReport(userId: number): Promise<Buffer> 
   (doc as any).autoTable({
     head: [["Cliente", "Cédula", "Cupo Total", "Deuda Total", "Disponible", "% Utilización"]],
     body: tableData,
-    startY: 35,
+    startY: y,
     styles: { fontSize: 9 },
   });
 
@@ -125,7 +146,6 @@ export async function generatePaymentAnalysisReport(userId: number): Promise<Buf
   const allPayments = await db.select().from(payments);
   const allCredits = await db.select().from(credits);
 
-  // Análisis de pagos por período
   const now = new Date();
   const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -142,23 +162,32 @@ export async function generatePaymentAnalysisReport(userId: number): Promise<Buf
   const lastMonthTotal = lastMonthPayments.reduce((sum, p) => sum + Number(p.amount), 0);
   const thisYearTotal = thisYearPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // Crear PDF
   const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Análisis de Pagos", 14, 15);
+  let y = await addCompanyHeader(doc, userId);
+  
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.text("Análisis de Pagos", 14, y);
+  y += 7;
 
   doc.setFontSize(10);
-  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, 25);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Fecha: ${new Date().toLocaleDateString("es-CO")}`, 14, y);
+  y += 10;
 
-  // Resumen
   doc.setFontSize(11);
-  doc.text("Resumen de Pagos:", 14, 40);
+  doc.setFont("helvetica", "bold");
+  doc.text("Resumen de Pagos:", 14, y);
+  y += 7;
   doc.setFontSize(10);
-  doc.text(`Pagos este mes: $${thisMonthTotal.toLocaleString("es-CO")}`, 14, 50);
-  doc.text(`Pagos mes anterior: $${lastMonthTotal.toLocaleString("es-CO")}`, 14, 60);
-  doc.text(`Pagos este año: $${thisYearTotal.toLocaleString("es-CO")}`, 14, 70);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Pagos este mes: $${thisMonthTotal.toLocaleString("es-CO")}`, 14, y);
+  y += 5;
+  doc.text(`Pagos mes anterior: $${lastMonthTotal.toLocaleString("es-CO")}`, 14, y);
+  y += 5;
+  doc.text(`Pagos este año: $${thisYearTotal.toLocaleString("es-CO")}`, 14, y);
+  y += 10;
 
-  // Tabla de pagos por cliente
   const paymentsByClient = userClients.map(client => {
     const clientPayments = allPayments.filter(p => {
       const credit = allCredits.find(c => c.id === p.creditId);
@@ -175,7 +204,7 @@ export async function generatePaymentAnalysisReport(userId: number): Promise<Buf
   (doc as any).autoTable({
     head: [["Cliente", "Cantidad de Pagos", "Total Pagado"]],
     body: paymentsByClient,
-    startY: 85,
+    startY: y,
     styles: { fontSize: 9 },
   });
 

@@ -22,6 +22,8 @@ import {
   getPaymentsByCredit,
   getPaymentHistoryByClient,
   getDb,
+  getCompanyProfile,
+  upsertCompanyProfile,
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
@@ -205,6 +207,28 @@ export const appRouter = router({
   }),
 
   // ============ CLIENT ROUTERS ============
+  company: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return getCompanyProfile(ctx.user.id);
+    }),
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(1, "El nombre es requerido"),
+          logoUrl: z.string().optional(),
+          nit: z.string().min(1, "El NIT o Cédula es requerido"),
+          address: z.string().min(1, "La dirección es requerida"),
+          city: z.string().min(1, "La ciudad es requerida"),
+          phone: z.string().min(1, "El teléfono es requerido"),
+          whatsapp: z.string().min(1, "El WhatsApp es requerido"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await upsertCompanyProfile(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
+
   clients: router({
     // Crear nuevo cliente
     create: protectedProcedure
@@ -575,9 +599,12 @@ export const appRouter = router({
           const credits = await getCreditsbyClientId(input.clientId);
           console.log("[PDF Export] Créditos obtenidos:", credits.length);
           
+          // Obtener perfil de empresa
+          const company = await getCompanyProfile(ctx.user.id);
+
           // Generar PDF
           console.log("[PDF Export] Generando PDF...");
-          const pdfBuffer = await generatePaymentHistoryPDF(client, history, credits);
+          const pdfBuffer = await generatePaymentHistoryPDF(client, history, credits, company);
           console.log("[PDF Export] PDF generado:", pdfBuffer.length, "bytes");
           
           // Convertir PDF a base64

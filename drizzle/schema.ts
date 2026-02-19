@@ -88,3 +88,22 @@ export const whatsappLogs = mysqlTable("whatsappLogs", {
 
 export type WhatsappLog = typeof whatsappLogs.$inferSelect;
 export type InsertWhatsappLog = typeof whatsappLogs.$inferInsert;
+
+/**
+ * Tabla de perfil de empresa
+ */
+export const companyProfile = mysqlTable("companyProfile", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  logoUrl: text("logoUrl"),
+  nit: varchar("nit", { length: 50 }).notNull(),
+  address: text("address").notNull(),
+  city: varchar("city", { length: 100 }).notNull(),
+  phone: varchar("phone", { length: 20 }).notNull(),
+  whatsapp: varchar("whatsapp", { length: 20 }).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CompanyProfile = typeof companyProfile.$inferSelect;
+export type InsertCompanyProfile = typeof companyProfile.$inferInsert;

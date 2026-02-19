@@ -12,6 +12,7 @@ import ClientDetail from "./pages/ClientDetail";
 import NewClient from "./pages/NewClient";
 import QuickCredit from "./pages/QuickCredit";
 import Reports from "./pages/Reports";
+import CompanyProfile from "./pages/CompanyProfile";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -46,6 +47,7 @@ function Router() {
         <Route path={"/clientes/nuevo"} component={NewClient} />
         <Route path={"/clientes/:id"} component={ClientDetail} />
         <Route path={"/reportes"} component={Reports} />
+        <Route path={"/perfil-empresa"} component={CompanyProfile} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
       </Switch>

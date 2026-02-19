@@ -410,3 +410,38 @@ export async function getPaymentHistoryByClient(clientId: number, userId: number
   return paymentHistory;
 }
 // Force deploy: 1771453843
+
+// ============ COMPANY PROFILE FUNCTIONS ============
+import { companyProfile } from "../drizzle/schema";
+
+export async function getCompanyProfile(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(companyProfile)
+    .where(eq(companyProfile.userId, userId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function upsertCompanyProfile(userId: number, data: Omit<typeof companyProfile.$inferInsert, 'userId'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await getCompanyProfile(userId);
+
+  if (existing) {
+    return db
+      .update(companyProfile)
+      .set(data)
+      .where(eq(companyProfile.userId, userId));
+  } else {
+    return db.insert(companyProfile).values({
+      ...data,
+      userId,
+    });
+  }
+}
