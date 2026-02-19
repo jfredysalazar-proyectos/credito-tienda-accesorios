@@ -445,3 +445,42 @@ export async function upsertCompanyProfile(userId: number, data: Omit<typeof com
     });
   }
 }
+
+// ============ REMINDER FUNCTIONS ============
+
+export async function getUpcomingExpiringCredits(userId: number, days: number = 3) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Obtener todos los clientes del usuario
+  const userClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.userId, userId));
+
+  const clientIds = userClients.map((c) => c.id);
+  if (clientIds.length === 0) return [];
+
+  const now = new Date();
+  const futureDate = new Date();
+  futureDate.setDate(now.getDate() + days);
+
+  // Obtener créditos activos
+  const allCredits = await db.select().from(credits);
+  
+  const expiringCredits = allCredits.filter((c) => {
+    if (!c.dueDate || c.status !== 'active' || !clientIds.includes(c.clientId)) return false;
+    const dueDate = new Date(c.dueDate);
+    return dueDate >= now && dueDate <= futureDate;
+  });
+
+  // Enriquecer con datos del cliente
+  return expiringCredits.map(credit => {
+    const client = userClients.find(c => c.id === credit.clientId);
+    return {
+      ...credit,
+      clientName: client?.name,
+      clientWhatsapp: client?.whatsappNumber
+    };
+  });
+}

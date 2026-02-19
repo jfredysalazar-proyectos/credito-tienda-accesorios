@@ -24,6 +24,7 @@ import {
   getDb,
   getCompanyProfile,
   upsertCompanyProfile,
+  getUpcomingExpiringCredits,
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
@@ -635,6 +636,12 @@ export const appRouter = router({
 
   // ============ WHATSAPP ROUTERS ============
   whatsapp: router({
+    getUpcomingReminders: protectedProcedure
+      .input(z.object({ days: z.number().default(3) }))
+      .query(async ({ ctx, input }) => {
+        return getUpcomingExpiringCredits(ctx.user.id, input.days);
+      }),
+
     sendStatement: protectedProcedure
       .input(z.object({ clientId: z.number() }))
       .mutation(async ({ ctx, input }) => {

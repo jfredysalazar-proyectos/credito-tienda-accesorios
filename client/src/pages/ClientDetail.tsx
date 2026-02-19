@@ -63,11 +63,22 @@ export default function ClientDetail() {
   );
 
   const createCreditMutation = trpc.credits.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast.success("Crédito registrado exitosamente");
       setIsNewCreditOpen(false);
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
+      
+      // Opción de enviar por WhatsApp
+      const message = `Hola ${client?.name}, te confirmo que hemos registrado tu nuevo crédito por "${data.concept}" por un valor de $${Number(data.amount).toLocaleString("es-CO")}. Fecha de vencimiento: ${new Date(data.dueDate).toLocaleDateString("es-CO")}. ¡Gracias por tu confianza!`;
+      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      
+      toast("¿Deseas enviar el comprobante por WhatsApp?", {
+        action: {
+          label: "Enviar",
+          onClick: () => window.open(url, "_blank"),
+        },
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el crédito");
@@ -75,13 +86,24 @@ export default function ClientDetail() {
   });
 
   const createPaymentMutation = trpc.payments.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast.success("Pago registrado exitosamente");
       setIsPaymentOpen(false);
       setSelectedCreditId(null);
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
       void utils.payments.getHistoryByClient.invalidate({ clientId });
+
+      // Opción de enviar por WhatsApp
+      const message = `Hola ${client?.name}, hemos recibido tu pago de $${Number(data.amount).toLocaleString("es-CO")}. Tu nuevo saldo es $${Number(data.newBalance || 0).toLocaleString("es-CO")}. ¡Muchas gracias!`;
+      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      
+      toast("¿Deseas enviar el recibo por WhatsApp?", {
+        action: {
+          label: "Enviar",
+          onClick: () => window.open(url, "_blank"),
+        },
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago");
@@ -109,13 +131,24 @@ export default function ClientDetail() {
   });
 
   const createGeneralPaymentMutation = trpc.payments.createGeneral.useMutation({
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       toast.success("Pago general registrado exitosamente");
       setIsGeneralPaymentOpen(false);
       setGeneralPaymentAmount("");
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
       void utils.payments.getHistoryByClient.invalidate({ clientId });
+
+      // Opción de enviar por WhatsApp
+      const message = `Hola ${client?.name}, hemos recibido tu pago general de $${Number(data.totalPaid).toLocaleString("es-CO")}. Tu saldo total adeudado ahora es de $${(totalBalance - data.totalPaid).toLocaleString("es-CO")}. ¡Muchas gracias!`;
+      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      
+      toast("¿Deseas enviar el recibo por WhatsApp?", {
+        action: {
+          label: "Enviar",
+          onClick: () => window.open(url, "_blank"),
+        },
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago general");
