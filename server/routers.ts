@@ -666,7 +666,7 @@ export const appRouter = router({
             id: p.id,
             type: 'abono',
             amount: Number(p.amount),
-            concept: p.notes || 'Abono a crédito',
+            concept: 'Abono a crédito',
             createdAt: new Date(p.createdAt)
           }))
         ];

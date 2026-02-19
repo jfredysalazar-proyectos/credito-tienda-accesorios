@@ -284,41 +284,53 @@ export async function generateAccountStatementPDF(client: any, transactions: any
 
       // Colores y Estilos
       const primaryColor = "#004d40"; // Verde oscuro bancario
-      const secondaryColor = "#e0f2f1";
       const textColor = "#333333";
 
       // ============ ENCABEZADO ============
+      let logoHeight = 0;
       if (company?.logoUrl) {
         try {
           const response = await axios.get(company.logoUrl, { responseType: 'arraybuffer' });
           const logoBuffer = Buffer.from(response.data, 'binary');
           doc.image(logoBuffer, 40, 40, { width: 50 });
+          logoHeight = 55;
         } catch (e) {
           doc.fontSize(20).fillColor(primaryColor).font('Helvetica-Bold').text('III', 40, 40);
+          logoHeight = 25;
         }
       } else {
         doc.fontSize(20).fillColor(primaryColor).font('Helvetica-Bold').text('III', 40, 40);
+        logoHeight = 25;
       }
 
       doc.fontSize(22).fillColor(primaryColor).font('Helvetica-Bold').text('Estado de Cuenta', 200, 45, { align: 'right' });
-      doc.moveDown(2);
-
-      // Información de la Empresa y Cliente (Dos columnas)
-      const topY = doc.y;
-      doc.fontSize(10).fillColor(textColor).font('Helvetica-Bold').text(client.name.toUpperCase(), 40, topY);
-      doc.font('Helvetica').text(`C.C./NIT: ${client.cedula}`, 40, doc.y + 2);
-      doc.text(`Tel: ${client.whatsappNumber}`, 40, doc.y + 2);
       
-      doc.font('Helvetica-Bold').text('Periodo', 350, topY);
-      doc.font('Helvetica').text(`Al ${formattedDate}`, 480, topY, { align: 'right' });
+      // Información de la Empresa (Debajo del Logo)
+      const companyY = 40 + logoHeight + 5;
+      doc.fontSize(9).fillColor(textColor).font('Helvetica-Bold').text(company?.name || 'CréditoTienda', 40, companyY);
+      doc.font('Helvetica').fontSize(8);
+      if (company?.nit) doc.text(`NIT/CC: ${company.nit}`, 40, doc.y + 2);
+      if (company?.address) doc.text(company.address, 40, doc.y + 2);
+      if (company?.city || company?.phone) doc.text(`${company?.city || ''} ${company?.phone || ''}`, 40, doc.y + 2);
+      if (company?.whatsapp) doc.text(`WhatsApp: ${company.whatsapp}`, 40, doc.y + 2);
+
+      // Información del Cliente y Periodo (Columna Derecha)
+      const rightColX = 350;
+      const clientY = 85; // Alineado con el bloque de la empresa aproximadamente
       
-      doc.font('Helvetica-Bold').text('Fecha de corte', 350, doc.y + 5);
-      doc.font('Helvetica').text(formattedDate, 480, doc.y, { align: 'right' });
+      doc.fontSize(10).fillColor(primaryColor).font('Helvetica-Bold').text('DATOS DEL CLIENTE', rightColX, clientY);
+      doc.fontSize(10).fillColor(textColor).font('Helvetica-Bold').text(client.name.toUpperCase(), rightColX, doc.y + 5);
+      doc.font('Helvetica').fontSize(9);
+      doc.text(`C.C./NIT: ${client.cedula}`, rightColX, doc.y + 2);
+      doc.text(`Tel: ${client.whatsappNumber}`, rightColX, doc.y + 2);
+      
+      doc.moveDown(1);
+      doc.font('Helvetica-Bold').text('PERIODO DE CUENTA', rightColX);
+      doc.font('Helvetica').text(`Fecha de corte: ${formattedDate}`, rightColX, doc.y + 2);
+      doc.text(`ID Cliente: C-${client.id.toString().padStart(5, '0')}`, rightColX, doc.y + 2);
 
-      doc.font('Helvetica-Bold').text('ID Cliente', 350, doc.y + 5);
-      doc.font('Helvetica').text(`C-${client.id.toString().padStart(5, '0')}`, 480, doc.y, { align: 'right' });
-
-      doc.moveDown(2);
+      doc.y = Math.max(doc.y, companyY + 60);
+      doc.moveDown(1);
       doc.moveTo(40, doc.y).lineTo(555, doc.y).strokeColor('#cccccc').lineWidth(0.5).stroke();
       doc.moveDown(1);
 
@@ -338,16 +350,18 @@ export async function generateAccountStatementPDF(client: any, transactions: any
       const disponible = Number(client.creditLimit) - summary.totalBalance;
       doc.fillColor(disponible < 0 ? '#d32f2f' : '#2e7d32').text(`$${disponible.toLocaleString("es-CO")}`, 200, doc.y, { align: 'right', width: 80 });
 
-      // Segunda columna del resumen (opcional o datos de empresa)
-      doc.fontSize(11).fillColor(primaryColor).font('Helvetica-Bold').text('Información de Contacto', 315, summaryY);
+      // Mensaje de estado
+      doc.fontSize(11).fillColor(primaryColor).font('Helvetica-Bold').text('Estado de su Crédito', 315, summaryY);
       doc.moveTo(315, summaryY + 15).lineTo(555, summaryY + 15).strokeColor(primaryColor).lineWidth(1).stroke();
       
       doc.fontSize(10).fillColor(textColor).font('Helvetica');
-      doc.text(company?.name || 'CréditoTienda', 315, summaryY + 25);
-      doc.text(company?.address || 'Dirección no configurada', 315, doc.y + 5);
-      doc.text(`${company?.city || ''} ${company?.phone || ''}`, 315, doc.y + 5);
+      const statusText = summary.totalBalance > 0 ? "Cuenta con saldo pendiente" : "Cuenta al día";
+      doc.text(statusText, 315, summaryY + 25);
+      if (summary.totalBalance > 0) {
+        doc.fontSize(8).text("Recuerde realizar sus abonos oportunamente para mantener su cupo disponible.", 315, doc.y + 5, { width: 240 });
+      }
 
-      doc.moveDown(3);
+      doc.moveDown(4);
 
       // ============ DETALLE DE TRANSACCIONES ============
       doc.fontSize(12).fillColor(primaryColor).font('Helvetica-Bold').text('DETALLE DE TRANSACCIONES', 40, doc.y, { align: 'center' });
@@ -367,11 +381,9 @@ export async function generateAccountStatementPDF(client: any, transactions: any
       doc.fontSize(9).fillColor(textColor).font('Helvetica');
 
       transactions.forEach((t, index) => {
-        // Verificar si necesitamos nueva página
         if (currentY > 700) {
           doc.addPage();
           currentY = 50;
-          // Re-dibujar encabezado de tabla en nueva página
           doc.rect(40, currentY, 515, 20).fill(primaryColor);
           doc.fillColor('#ffffff').font('Helvetica-Bold');
           doc.text('Fecha', 45, currentY + 6);
@@ -383,7 +395,6 @@ export async function generateAccountStatementPDF(client: any, transactions: any
           doc.fillColor(textColor).font('Helvetica');
         }
 
-        // Fondo alternado
         if (index % 2 === 0) {
           doc.rect(40, currentY, 515, 18).fill('#f9f9f9');
         }
@@ -406,7 +417,6 @@ export async function generateAccountStatementPDF(client: any, transactions: any
         currentY += 18;
       });
 
-      // Pie de página final
       const footerY = 750;
       doc.fontSize(8).fillColor('#999999').font('Helvetica-Oblique');
       doc.rect(40, footerY, 515, 40).fill('#f5f5f5');
