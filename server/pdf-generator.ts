@@ -18,6 +18,9 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
       });
 
       const totalPaid = history.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+      
+      // Calcular saldo total adeudado (se obtiene del último pago registrado)
+      const balanceDue = history.length > 0 ? Number(history[history.length - 1].newBalance) : 0;
 
       // Encabezado
       doc.fontSize(18).font('Helvetica-Bold').text('Historial de Pagos', { align: 'center' });
@@ -33,13 +36,13 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
       // Tabla de pagos con mejor formato
       const pageWidth = doc.page.width - 80; // 40 de margen en cada lado
       const colWidths = {
-        fecha: 55,
-        concepto: 110,
-        saldoAnterior: 65,
+        fecha: 50,
+        concepto: 130,
+        saldoAnterior: 85,
         pago: 65,
         nuevoSaldo: 65,
-        formaPago: 80,
-        notas: 80
+        formaPago: 70,
+        notas: 70
       };
 
       const startX = 40;
@@ -97,7 +100,7 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
 
       // Encabezados
       doc.fontSize(10).font('Helvetica-Bold');
-      drawRow('Fecha', 'Concepto', 'Saldo Anterior', 'Pago', 'Nuevo Saldo', 'Forma de Pago', 'Notas', true);
+      drawRow('Fecha', 'Item donde se aplicó Pago', 'Saldo Anterior', 'Pago', 'Nuevo Saldo', 'Forma de Pago', 'Notas', true);
       
       // Línea separadora
       doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
@@ -129,6 +132,10 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
       // Resumen - Total Pagado en su propia línea
       doc.fontSize(12).font('Helvetica-Bold');
       doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
+      doc.moveDown(0.5);
+      
+      // Saldo Por Pagar en nueva línea
+      doc.text(`Saldo Por Pagar: $${balanceDue.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
       doc.moveDown(2);
 
       // Pie de página - ancho completo, centrado, siempre dentro de la página
