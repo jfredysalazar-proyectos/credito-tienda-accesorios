@@ -111,3 +111,6 @@
 ## Mejoras de UI - Totales en Historial
 - [x] Agregar línea "Deuda Total" en sección de Créditos Registrados
 - [x] Agregar línea "Saldo Por Pagar" en sección de Historial de Pagos (ahora muestra deuda total del cliente)
+
+## Cambios de Etiquetas - Historial de Pagos
+- [x] Cambiar encabezado "Concepto" por "Item donde se aplicó Pago" en tabla de Historial
