@@ -114,3 +114,10 @@
 
 ## Cambios de Etiquetas - Historial de Pagos
 - [x] Cambiar encabezado "Concepto" por "Item donde se aplicó Pago" en tabla de Historial
+
+
+## Correcciones en Reporte PDF
+- [x] Cambiar encabezado "Concepto" por "Item donde se aplicó Pago" en PDF
+- [x] Aumentar espacio para columna "Saldo Anterior" en PDF
+- [x] Aumentar espacio para columna "Item donde se aplicó" en PDF
+- [x] Agregar fila "Saldo Por Pagar" debajo de "Total Pagado" en PDF
