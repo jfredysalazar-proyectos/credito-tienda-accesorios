@@ -263,7 +263,7 @@ export default function ClientDetail() {
           disabled={sendStatementMutation.isPending}
         >
           <Send className="mr-2 h-4 w-4" />
-          Enviar Estado de Cuenta
+          Generar Estado de Cuenta
         </Button>
 
         <Dialog open={isGeneralPaymentOpen} onOpenChange={setIsGeneralPaymentOpen}>
