@@ -106,3 +106,8 @@
 - [x] Distribución incorrecta de pagos entre múltiples créditos del cliente (CORREGIDO: cálculo de saldos actualizado)
 - [x] Créditos con saldo $0 permanecían como 'Activo' (CORREGIDO: estado actualizado a 'Pagado' cuando saldo es $0)
 - [x] Historial de pagos no se refrescaba después de registrar (CORREGIDO: agregada invalidación de query)
+
+
+## Mejoras de UI - Totales en Historial
+- [x] Agregar línea "Deuda Total" en sección de Créditos Registrados
+- [x] Agregar línea "Saldo Por Pagar" en sección de Historial de Pagos

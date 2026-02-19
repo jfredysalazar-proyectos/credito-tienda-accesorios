@@ -101,6 +101,7 @@ export default function PaymentHistory({
   }, [payments, filterMethod, filterStartDate, filterEndDate]);
 
   const totalPaid = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+  const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
 
   const handleExportPDF = async () => {
     if (!clientId) {
@@ -118,29 +119,25 @@ export default function PaymentHistory({
       console.log("Tipo de resultado:", typeof result);
       console.log("Propiedades:", Object.keys(result || {}));
       
-      if (result.pdf) {
-        // Decodificar base64
+      if (result && result.pdf) {
         const binaryString = atob(result.pdf);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        
-        // Crear blob y descargar
         const blob = new Blob([bytes], { type: "application/pdf" });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = result.filename;
+        link.download = `historial_pagos_${clientName || "cliente"}_${new Date().toISOString().split("T")[0]}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
         console.log("PDF descargado exitosamente");
       }
     } catch (error) {
-      console.error("Error exportando PDF:", error);
+      console.error("Error al exportar PDF:", error);
     } finally {
       setIsExporting(false);
     }
@@ -228,9 +225,12 @@ export default function PaymentHistory({
 
         {/* Resumen */}
         {filteredPayments.length > 0 && (
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 p-4 rounded-lg space-y-3">
             <p className="text-sm font-medium text-gray-700">
               Total Pagado: <span className="text-lg font-bold text-blue-600">${totalPaid.toLocaleString("es-CO")}</span>
+            </p>
+            <p className="text-sm font-medium text-gray-700 border-t border-blue-200 pt-3">
+              Saldo Por Pagar: <span className="text-lg font-bold text-red-600">${balanceDue.toLocaleString("es-CO")}</span>
             </p>
           </div>
         )}
@@ -264,10 +264,10 @@ export default function PaymentHistory({
                     <TableCell className="text-right">
                       ${payment.previousBalance.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="text-right font-medium text-red-600">
-                      -${payment.amount.toLocaleString("es-CO")}
+                    <TableCell className="text-right font-medium">
+                      ${payment.amount.toLocaleString("es-CO")}
                     </TableCell>
-                    <TableCell className="text-right font-medium text-green-600">
+                    <TableCell className="text-right">
                       ${payment.newBalance.toLocaleString("es-CO")}
                     </TableCell>
                     <TableCell>
@@ -275,7 +275,7 @@ export default function PaymentHistory({
                         {paymentMethodLabels[payment.paymentMethod] || payment.paymentMethod}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                    <TableCell className="text-sm text-gray-600">
                       {payment.notes || "-"}
                     </TableCell>
                   </TableRow>

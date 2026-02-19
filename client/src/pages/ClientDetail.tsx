@@ -476,6 +476,15 @@ export default function ClientDetail() {
                   })}
                 </TableBody>
               </Table>
+              {/* Deuda Total */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-lg">Deuda Total:</span>
+                  <span className="font-bold text-lg text-red-600">
+                    ${credits.reduce((sum, c) => sum + Number(c.balance), 0).toLocaleString("es-CO")}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
