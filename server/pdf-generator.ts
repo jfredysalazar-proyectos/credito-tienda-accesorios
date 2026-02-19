@@ -33,13 +33,13 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
       // Tabla de pagos con mejor formato
       const pageWidth = doc.page.width - 80; // 40 de margen en cada lado
       const colWidths = {
-        fecha: 60,
-        concepto: 80,
-        saldoAnterior: 70,
-        pago: 70,
-        nuevoSaldo: 70,
-        formaPago: 65,
-        notas: 50
+        fecha: 55,
+        concepto: 110,
+        saldoAnterior: 65,
+        pago: 65,
+        nuevoSaldo: 65,
+        formaPago: 80,
+        notas: 80
       };
 
       const startX = 40;
@@ -131,15 +131,15 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
       doc.text(`Total Pagado: $${totalPaid.toLocaleString("es-CO")}`, startX, doc.y, { align: 'left' });
       doc.moveDown(2);
 
-      // Pie de página - ancho completo, centrado
-      const footerY = doc.page.height - 60; // 60 puntos desde el fondo
+      // Pie de página - ancho completo, centrado, siempre dentro de la página
+      const footerY = Math.max(doc.y + 20, doc.page.height - 80); // Mínimo 80 puntos desde el fondo
       doc.fontSize(9).font('Helvetica');
       doc.moveTo(startX, footerY - 10).lineTo(doc.page.width - startX, footerY - 10).stroke();
       doc.text('Este reporte fue generado automáticamente por el Sistema de Gestión de Créditos.', startX, footerY, { 
         width: pageWidth, 
         align: 'center' 
       });
-      doc.text(`Generado el ${formattedDate}`, startX, footerY + 15, { 
+      doc.text(`Generado el ${formattedDate}`, startX, footerY + 12, { 
         width: pageWidth, 
         align: 'center' 
       });
