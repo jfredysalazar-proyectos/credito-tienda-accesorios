@@ -571,9 +571,13 @@ export const appRouter = router({
           const history = await getPaymentHistoryByClient(input.clientId, ctx.user.id);
           console.log("[PDF Export] Historial obtenido:", history.length, "pagos");
           
+          // Obtener créditos activos
+          const credits = await getCreditsbyClientId(input.clientId);
+          console.log("[PDF Export] Créditos obtenidos:", credits.length);
+          
           // Generar PDF
           console.log("[PDF Export] Generando PDF...");
-          const pdfBuffer = await generatePaymentHistoryPDF(client, history);
+          const pdfBuffer = await generatePaymentHistoryPDF(client, history, credits);
           console.log("[PDF Export] PDF generado:", pdfBuffer.length, "bytes");
           
           // Convertir PDF a base64
