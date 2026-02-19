@@ -30,7 +30,7 @@ import { hashPassword, verifyPassword, getUserByEmail } from "./auth";
 import { eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { generateOverdueCreditsReport, generateClientDebtReport, generatePaymentAnalysisReport } from "./reports";
-import { generatePaymentHistoryPDF } from "./pdf-generator";
+import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
 // Updated: 2026-02-17 - Force Railway redeploy
 
 export const appRouter = router({
@@ -646,16 +646,64 @@ export const appRouter = router({
           });
         }
 
-        // Crear log de WhatsApp para envío manual
-        await createWhatsappLog({
-          clientId: input.clientId,
-          messageType: "manual_statement",
-          phoneNumber: client.whatsappNumber,
-          messageContent: "",
-          status: "pending",
+        // Obtener todos los créditos y pagos para construir el historial cronológico
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        const clientCredits = await getCreditsbyClientId(input.clientId);
+        const clientPayments = await db.select().from(payments).where(eq(payments.clientId, input.clientId));
+
+        // Consolidar transacciones
+        const allTransactions: any[] = [
+          ...clientCredits.map(c => ({
+            id: c.id,
+            type: 'prestamo',
+            amount: Number(c.amount),
+            concept: c.concept,
+            createdAt: new Date(c.createdAt)
+          })),
+          ...clientPayments.map(p => ({
+            id: p.id,
+            type: 'abono',
+            amount: Number(p.amount),
+            concept: p.notes || 'Abono a crédito',
+            createdAt: new Date(p.createdAt)
+          }))
+        ];
+
+        // Ordenar por fecha
+        allTransactions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+        // Calcular saldo acumulado (running balance)
+        let runningBalance = 0;
+        const transactionsWithBalance = allTransactions.map(t => {
+          if (t.type === 'prestamo') {
+            runningBalance += t.amount;
+          } else {
+            runningBalance -= t.amount;
+          }
+          return { ...t, runningBalance };
         });
 
-        return { success: true };
+        const totalBalance = clientCredits.reduce((sum, c) => sum + Number(c.balance), 0);
+        const company = await getCompanyProfile(ctx.user.id);
+
+        // Generar PDF
+        const pdfBuffer = await generateAccountStatementPDF(
+          client,
+          transactionsWithBalance,
+          { totalBalance },
+          company
+        );
+
+        const base64Pdf = pdfBuffer.toString("base64");
+        const filename = `estado-cuenta-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.pdf`;
+
+        return {
+          success: true,
+          pdf: base64Pdf,
+          filename,
+        };
       }),
   }),
 

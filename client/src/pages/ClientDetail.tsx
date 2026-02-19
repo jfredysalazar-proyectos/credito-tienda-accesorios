@@ -89,12 +89,22 @@ export default function ClientDetail() {
   });
 
   const sendStatementMutation = trpc.whatsapp.sendStatement.useMutation({
-    onSuccess: () => {
-      toast.success("Estado de cuenta enviado por WhatsApp");
+    onSuccess: (data) => {
+      if (data.pdf && data.filename) {
+        // Crear un enlace para descargar el PDF
+        const linkSource = `data:application/pdf;base64,${data.pdf}`;
+        const downloadLink = document.createElement("a");
+        downloadLink.href = linkSource;
+        downloadLink.download = data.filename;
+        downloadLink.click();
+        toast.success("Estado de cuenta generado correctamente");
+      } else {
+        toast.success("Estado de cuenta enviado por WhatsApp");
+      }
       void utils.credits.getByClientId.invalidate({ clientId });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el estado de cuenta");
+      toast.error(error.message || "Error al generar el estado de cuenta");
     },
   });
 
