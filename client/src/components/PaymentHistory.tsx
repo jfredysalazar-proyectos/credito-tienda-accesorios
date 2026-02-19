@@ -29,6 +29,12 @@ interface PaymentRecord {
   concept: string;
 }
 
+interface Credit {
+  id: number;
+  balance: string | number;
+  status: string;
+}
+
 interface PaymentHistoryProps {
   payments: PaymentRecord[];
   isLoading?: boolean;
@@ -36,6 +42,7 @@ interface PaymentHistoryProps {
   clientCedula?: string;
   clientPhone?: string;
   clientId?: number;
+  credits?: Credit[];
 }
 
 const paymentMethodLabels: Record<string, string> = {
@@ -64,7 +71,8 @@ export default function PaymentHistory({
   clientName, 
   clientCedula, 
   clientPhone,
-  clientId
+  clientId,
+  credits
 }: PaymentHistoryProps) {
   const [filterMethod, setFilterMethod] = useState<string>("all");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
@@ -101,7 +109,12 @@ export default function PaymentHistory({
   }, [payments, filterMethod, filterStartDate, filterEndDate]);
 
   const totalPaid = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
-  const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
+  // Calcular saldo total adeudado sumando balance de todos los créditos activos
+  const balanceDue = credits ? credits.reduce((sum: number, credit: Credit) => {
+    // Solo sumar créditos activos (status = 'active')
+    const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
+    return credit.status === 'active' ? sum + creditBalance : sum;
+  }, 0) : 0;
 
   const handleExportPDF = async () => {
     if (!clientId) {

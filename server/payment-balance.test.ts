@@ -1,32 +1,33 @@
 import { describe, it, expect } from "vitest";
 
 describe("Payment Balance Calculation", () => {
-  it("should calculate balance due correctly from payment history", () => {
-    // Simulamos el historial de pagos
-    const payments = [
-      {
-        id: 1,
-        amount: 100000,
-        previousBalance: 500000,
-        newBalance: 400000,
-      },
-      {
-        id: 2,
-        amount: 200000,
-        previousBalance: 400000,
-        newBalance: 200000,
-      },
+  it("should calculate total debt from active credits", () => {
+    // Simulamos los créditos del cliente
+    const credits = [
+      { id: 1, balance: 100000, status: 'active' },
+      { id: 2, balance: 200000, status: 'active' },
+      { id: 3, balance: 50000, status: 'paid' }, // Este no debe contar
     ];
 
-    // El saldo por pagar es el último saldo registrado
-    const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
+    // El saldo por pagar es la suma de todos los créditos activos
+    const balanceDue = credits.reduce((sum: number, credit: any) => {
+      const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
+      return credit.status === 'active' ? sum + creditBalance : sum;
+    }, 0);
 
-    expect(balanceDue).toBe(200000);
+    expect(balanceDue).toBe(300000);
   });
 
-  it("should return 0 balance due when no payments exist", () => {
-    const payments: any[] = [];
-    const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
+  it("should return 0 balance due when no active credits exist", () => {
+    const credits = [
+      { id: 1, balance: 100000, status: 'paid' },
+      { id: 2, balance: 200000, status: 'paid' },
+    ];
+
+    const balanceDue = credits.reduce((sum: number, credit: any) => {
+      const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
+      return credit.status === 'active' ? sum + creditBalance : sum;
+    }, 0);
 
     expect(balanceDue).toBe(0);
   });
@@ -43,35 +44,33 @@ describe("Payment Balance Calculation", () => {
     expect(totalPaid).toBe(450000);
   });
 
-  it("should handle single payment correctly", () => {
-    const payments = [
-      {
-        id: 1,
-        amount: 500000,
-        previousBalance: 500000,
-        newBalance: 0,
-      },
+  it("should handle string balance values correctly", () => {
+    const credits = [
+      { id: 1, balance: "100000", status: 'active' },
+      { id: 2, balance: "200000", status: 'active' },
     ];
 
-    const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    const balanceDue = credits.reduce((sum: number, credit: any) => {
+      const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
+      return credit.status === 'active' ? sum + creditBalance : sum;
+    }, 0);
 
-    expect(balanceDue).toBe(0);
-    expect(totalPaid).toBe(500000);
+    expect(balanceDue).toBe(300000);
   });
 
-  it("should handle negative balance (overpayment) correctly", () => {
-    const payments = [
-      {
-        id: 1,
-        amount: 600000,
-        previousBalance: 500000,
-        newBalance: -100000,
-      },
+  it("should handle mixed active and inactive credits correctly", () => {
+    const credits = [
+      { id: 1, balance: 100000, status: 'active' },
+      { id: 2, balance: 200000, status: 'active' },
+      { id: 3, balance: 50000, status: 'paid' },
+      { id: 4, balance: 75000, status: 'overdue' }, // Crédito vencido no debe contar
     ];
 
-    const balanceDue = payments.length > 0 ? payments[payments.length - 1].newBalance : 0;
+    const balanceDue = credits.reduce((sum: number, credit: any) => {
+      const creditBalance = typeof credit.balance === 'string' ? parseFloat(credit.balance) : credit.balance;
+      return credit.status === 'active' ? sum + creditBalance : sum;
+    }, 0);
 
-    expect(balanceDue).toBe(-100000);
+    expect(balanceDue).toBe(300000);
   });
 });
