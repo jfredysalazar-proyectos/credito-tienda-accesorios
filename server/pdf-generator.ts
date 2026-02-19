@@ -19,8 +19,20 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
 
       const totalPaid = history.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
       
-      // Calcular saldo total adeudado (se obtiene del último pago registrado)
+      // Calcular saldo total adeudado (suma de todos los créditos activos)
+      // Por ahora se obtiene del último pago registrado, pero idealmente vendría de los créditos activos
       const balanceDue = history.length > 0 ? Number(history[history.length - 1].newBalance) : 0;
+      
+      // Mapeo de métodos de pago al español
+      const paymentMethodMap: Record<string, string> = {
+        'cash': 'Efectivo',
+        'transfer': 'Transferencia',
+        'check': 'Cheque',
+        'credit_card': 'Tarjeta de Crédito',
+        'debit_card': 'Tarjeta Débito',
+        'general_payment': 'Pago General',
+        'other': 'Otro'
+      };
 
       // Encabezado
       doc.fontSize(18).font('Helvetica-Bold').text('Historial de Pagos', { align: 'center' });
@@ -47,6 +59,7 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
 
       const startX = 40;
       const rowHeight = 20;
+      const headerRowHeight = 28; // Mayor altura para encabezados
       let y = doc.y;
 
       // Función para dibujar una fila
@@ -98,9 +111,11 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
         y += rowHeight;
       };
 
-      // Encabezados
+      // Encabezados con más espacio
       doc.fontSize(10).font('Helvetica-Bold');
+      const headerY = y;
       drawRow('Fecha', 'Item donde se aplicó Pago', 'Saldo Anterior', 'Pago', 'Nuevo Saldo', 'Forma de Pago', 'Notas', true);
+      y = headerY + headerRowHeight; // Usar altura mayor para encabezados
       
       // Línea separadora
       doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
@@ -113,6 +128,8 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
         const saldoAnterior = `$${Number(payment.previousBalance).toLocaleString("es-CO")}`;
         const pago = `$${Number(payment.amount).toLocaleString("es-CO")}`;
         const nuevoSaldo = `$${Number(payment.newBalance).toLocaleString("es-CO")}`;
+        // Traducir método de pago al español
+        const formaPagoEspanol = paymentMethodMap[payment.paymentMethod] || payment.paymentMethod || '-';
         
         drawRow(
           fecha,
@@ -120,7 +137,7 @@ export async function generatePaymentHistoryPDF(client: any, history: any[]): Pr
           saldoAnterior,
           pago,
           nuevoSaldo,
-          payment.paymentMethod || '-',
+          formaPagoEspanol,
           payment.notes || '-'
         );
       });
