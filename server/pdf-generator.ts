@@ -343,12 +343,14 @@ export async function generateAccountStatementPDF(client: any, transactions: any
       doc.text('Cupo Total', 40, summaryY + 25);
       doc.text(`$${Number(client.creditLimit).toLocaleString("es-CO")}`, 200, summaryY + 25, { align: 'right', width: 80 });
       
-      doc.text('Saldo Adeudado', 40, doc.y + 5);
-      doc.fillColor('#d32f2f').text(`$${summary.totalBalance.toLocaleString("es-CO")}`, 200, doc.y, { align: 'right', width: 80 });
+      const row1Y = doc.y + 5;
+      doc.text('Saldo Adeudado', 40, row1Y);
+      doc.fillColor('#d32f2f').text(`$${summary.totalBalance.toLocaleString("es-CO")}`, 200, row1Y, { align: 'right', width: 80 });
       
-      doc.fillColor(textColor).text('Cupo Disponible', 40, doc.y + 5);
+      const row2Y = row1Y + 15;
+      doc.fillColor(textColor).text('Cupo Disponible', 40, row2Y);
       const disponible = Number(client.creditLimit) - summary.totalBalance;
-      doc.fillColor(disponible < 0 ? '#d32f2f' : '#2e7d32').text(`$${disponible.toLocaleString("es-CO")}`, 200, doc.y, { align: 'right', width: 80 });
+      doc.fillColor(disponible < 0 ? '#d32f2f' : '#2e7d32').text(`$${disponible.toLocaleString("es-CO")}`, 200, row2Y, { align: 'right', width: 80 });
 
       // Mensaje de estado
       doc.fontSize(11).fillColor(primaryColor).font('Helvetica-Bold').text('Estado de su Crédito', 315, summaryY);
