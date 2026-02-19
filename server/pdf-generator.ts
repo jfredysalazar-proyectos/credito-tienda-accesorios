@@ -151,12 +151,12 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
         });
 
         doc.moveTo(startX, y - 5).lineTo(startX + pageWidth - 10, y - 5).stroke();
-        doc.moveDown(1);
+        doc.moveDown(2.5); // Espacio adicional después de la tabla de créditos
       }
 
       // ============ TABLA DE HISTORIAL DE PAGOS ============
-      doc.fontSize(12).font('Helvetica-Bold').text('Historial de Pagos', { underline: true });
-      doc.moveDown(0.3);
+      doc.fontSize(12).font('Helvetica-Bold').text('Historial de Pagos', 40, doc.y, { underline: true, align: 'left' });
+      doc.moveDown(0.5);
 
       const pageWidth = doc.page.width - 80;
       const colWidths = {
