@@ -604,7 +604,27 @@ export const appRouter = router({
       return getCompanyProfile(ctx.user.id);
     }),
 
+    // Alias requerido por el frontend
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return getCompanyProfile(ctx.user.id);
+    }),
+
     upsertProfile: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        logoUrl: z.string().optional(),
+        nit: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        phone: z.string().optional(),
+        whatsapp: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return upsertCompanyProfile(ctx.user.id, input);
+      }),
+
+    // Alias requerido por el frontend
+    upsert: protectedProcedure
       .input(z.object({
         name: z.string(),
         logoUrl: z.string().optional(),
