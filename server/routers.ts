@@ -18,9 +18,7 @@ import {
   getUpcomingExpiringCredits,
   getCompanyProfile,
   upsertCompanyProfile,
-  resetClientAccount,
-  getUserByUsername,
-  createUser
+  resetClientAccount
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
@@ -33,39 +31,36 @@ import { createWhatsappLog } from "./db";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { payments, credits } from "../drizzle/schema";
-import { signToken, verifyPassword, hashPassword } from "./auth";
+import { getUserByEmail, verifyPassword } from "./auth";
+import { sdk } from "./_core/sdk";
 
 export const appRouter = router({
   // ============ AUTH ROUTERS ============
   auth: router({
     login: publicProcedure
       .input(z.object({ username: z.string(), password: z.string() }))
-      .mutation(async ({ input }) => {
-        const user = await getUserByUsername(input.username);
-        if (!user || !(await verifyPassword(input.password, user.password))) {
+      .mutation(async ({ input, ctx }) => {
+        // En este proyecto 'username' se mapea a 'email' en la BD
+        const user = await getUserByEmail(input.username);
+        if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Usuario o contraseña incorrectos",
           });
         }
-        const token = signToken({ id: user.id, username: user.username });
-        return { token, user: { id: user.id, username: user.username } };
+        
+        const token = await sdk.createSessionToken(user.id, user.email);
+        sdk.setSessionCookie(ctx.res, token);
+        
+        return { 
+          success: true,
+          user: { id: user.id, username: user.email } 
+        };
       }),
-    register: publicProcedure
-      .input(z.object({ username: z.string(), password: z.string() }))
-      .mutation(async ({ input }) => {
-        const existingUser = await getUserByUsername(input.username);
-        if (existingUser) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "El nombre de usuario ya existe",
-          });
-        }
-        const hashedPassword = await hashPassword(input.password);
-        const user = await createUser({ username: input.username, password: hashedPassword });
-        const token = signToken({ id: user.id, username: user.username });
-        return { token, user: { id: user.id, username: user.username } };
-      }),
+    logout: protectedProcedure.mutation(({ ctx }) => {
+      sdk.clearSessionCookie(ctx.res);
+      return { success: true };
+    }),
     me: protectedProcedure.query(({ ctx }) => {
       return ctx.user;
     }),
