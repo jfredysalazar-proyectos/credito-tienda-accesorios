@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -192,6 +192,16 @@ export default function ClientDetail() {
   const totalBalance = credits?.reduce((sum, credit) => sum + Number(credit.balance), 0) || 0;
   const availableCredit = Number(client.creditLimit) - totalBalance;
 
+  const toggleCredit = (id: number) => {
+    const next = new Set(expandedCredits);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setExpandedCredits(next);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
@@ -282,58 +292,45 @@ export default function ClientDetail() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Registrar Nuevo Crédito</DialogTitle>
+              <DialogTitle>Nuevo Crédito</DialogTitle>
               <DialogDescription>
-                Registra un nuevo crédito para {client.name}
+                Registra una nueva compra a crédito para {client.name}
               </DialogDescription>
             </DialogHeader>
             <NewCreditForm
               clientId={clientId}
-              onSubmit={(data: any) => {
-                createCreditMutation.mutate({
-                  clientId,
-                  ...data,
-                });
-              }}
+              onSubmit={(data: any) => createCreditMutation.mutate({ clientId, ...data })}
               isLoading={createCreditMutation.isPending}
             />
           </DialogContent>
         </Dialog>
 
-        <Button
-          variant="outline"
-          onClick={() => sendStatementMutation.mutate({ clientId })}
-          disabled={sendStatementMutation.isPending}
-        >
-          <Send className="mr-2 h-4 w-4" />
-          Generar Estado de Cuenta
-        </Button>
-
+        {/* Botón de Pago General */}
         <Dialog open={isGeneralPaymentOpen} onOpenChange={setIsGeneralPaymentOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" disabled={totalBalance === 0} className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Pago General a Deuda
+            <Button variant="secondary" disabled={totalBalance <= 0}>
+              <Send className="mr-2 h-4 w-4" />
+              Registrar Pago General
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Pago General a Deuda</DialogTitle>
+              <DialogTitle>Registrar Pago General</DialogTitle>
               <DialogDescription>
-                Registra un pago que se distribuirá automáticamente entre los créditos activos
+                Este pago se distribuirá automáticamente entre los créditos activos.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Deuda Total</Label>
-                <div className="text-2xl font-bold text-red-600 mt-2">
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Saldo Total Adeudado</Label>
+                <div className="text-2xl font-bold text-red-600">
                   ${totalBalance.toLocaleString("es-CO")}
                 </div>
               </div>
-              <div>
-                <Label htmlFor="general-amount">Monto del Pago</Label>
+              <div className="space-y-2">
+                <Label htmlFor="payment-amount">Monto a Pagar</Label>
                 <Input
-                  id="general-amount"
+                  id="payment-amount"
                   type="number"
                   placeholder="0.00"
                   value={generalPaymentAmount}
@@ -344,7 +341,7 @@ export default function ClientDetail() {
               </div>
               <div>
                 <Label htmlFor="payment-method">Forma de Pago</Label>
-                     <Select value={generalPaymentMethod} onValueChange={setGeneralPaymentMethod}>
+                <Select value={generalPaymentMethod} onValueChange={setGeneralPaymentMethod}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -353,9 +350,6 @@ export default function ClientDetail() {
                     <SelectItem value="transfer">Transferencia</SelectItem>
                     <SelectItem value="check">Cheque</SelectItem>
                     <SelectItem value="devolucion">Devolución</SelectItem>
-                    <SelectItem value="other">Otro</SelectItem>
-                  </SelectContent>
-                </Select>ctItem value="debit_card">Tarjeta Débito</SelectItem>
                     <SelectItem value="other">Otro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -378,7 +372,7 @@ export default function ClientDetail() {
                     return;
                   }
                   if (amount > totalBalance) {
-                    toast.error("El monto no puede ser mayor a la deuda total");
+                    toast.error("El monto supera la deuda total");
                     return;
                   }
                   createGeneralPaymentMutation.mutate({
@@ -387,50 +381,54 @@ export default function ClientDetail() {
                     paymentMethod: generalPaymentMethod,
                     notes: generalPaymentNotes || undefined,
                   });
-                  setGeneralPaymentAmount("");
-                  setGeneralPaymentMethod("cash");
-                  setGeneralPaymentNotes("");
                 }}
-                disabled={createGeneralPaymentMutation.isPending}
                 className="w-full"
+                disabled={createGeneralPaymentMutation.isPending || !generalPaymentAmount}
               >
                 {createGeneralPaymentMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Plus className="mr-2 h-4 w-4" />
                 )}
-                Registrar Pago
+                Confirmar Pago General
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        <Button 
+          variant="outline" 
+          onClick={() => sendStatementMutation.mutate({ clientId })}
+          disabled={sendStatementMutation.isPending}
+        >
+          {sendStatementMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileText className="mr-2 h-4 w-4" />
+          )}
+          Generar Estado de Cuenta
+        </Button>
       </div>
 
       {/* Credits Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Créditos Registrados</CardTitle>
-          <CardDescription>
-            {credits?.length || 0} crédito{credits?.length !== 1 ? "s" : ""} registrado{credits?.length !== 1 ? "s" : ""}
-          </CardDescription>
+          <CardTitle>Créditos</CardTitle>
+          <CardDescription>Gestión de créditos y abonos</CardDescription>
         </CardHeader>
         <CardContent>
           {!credits || credits.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay créditos registrados</p>
-            </div>
+            <p className="text-center text-muted-foreground py-8">No hay créditos registrados</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="rounded-md border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead></TableHead>
+                    <TableHead>Fecha</TableHead>
                     <TableHead>Concepto</TableHead>
-                    <TableHead>Monto</TableHead>
-                    <TableHead>Saldo</TableHead>
-                    <TableHead>Fecha de Crédito</TableHead>
-                    <TableHead>Vencimiento</TableHead>
-                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead className="text-center">Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -439,76 +437,39 @@ export default function ClientDetail() {
                     const isExpanded = expandedCredits.has(credit.id);
                     return (
                       <TableRow key={credit.id}>
-                        <TableCell>
-                          <button
-                            onClick={() => {
-                              const newExpanded = new Set(expandedCredits);
-                              if (isExpanded) {
-                                newExpanded.delete(credit.id);
-                              } else {
-                                newExpanded.add(credit.id);
-                              }
-                              setExpandedCredits(newExpanded);
-                            }}
-                            className="p-1"
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </button>
+                        <TableCell className="font-medium">
+                          {new Date(credit.createdAt).toLocaleDateString("es-CO")}
                         </TableCell>
-                        <TableCell className="font-medium">{credit.concept}</TableCell>
-                        <TableCell>${Number(credit.amount).toLocaleString("es-CO")}</TableCell>
-                        <TableCell>${Number(credit.balance).toLocaleString("es-CO")}</TableCell>
-                        <TableCell>
-                          {credit.createdAt
-                            ? new Date(credit.createdAt).toLocaleDateString("es-CO")
-                            : "N/A"}
+                        <TableCell>{credit.concept}</TableCell>
+                        <TableCell className="text-right">
+                          ${Number(credit.amount).toLocaleString("es-CO")}
                         </TableCell>
-                        <TableCell>
-                          {credit.dueDate
-                            ? new Date(credit.dueDate).toLocaleDateString("es-CO")
-                            : "N/A"}
+                        <TableCell className="text-right font-bold">
+                          ${Number(credit.balance).toLocaleString("es-CO")}
                         </TableCell>
-                        <TableCell>
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              credit.status === "active"
-                                ? "bg-blue-100 text-blue-800"
-                                : credit.status === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {credit.status === "active"
-                              ? "Activo"
-                              : credit.status === "paid"
-                              ? "Pagado"
-                              : "Vencido"}
+                        <TableCell className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            credit.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {credit.status === 'active' ? 'Activo' : 'Pagado'}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {credit.status === "active" && (
+                          {credit.status === 'active' && (
                             <Dialog open={isPaymentOpen && selectedCreditId === credit.id} onOpenChange={(open) => {
                               setIsPaymentOpen(open);
                               if (!open) setSelectedCreditId(null);
                             }}>
                               <DialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setSelectedCreditId(credit.id)}
-                                >
-                                  Pagar
+                                <Button size="sm" variant="outline" onClick={() => setSelectedCreditId(credit.id)}>
+                                  Abonar
                                 </Button>
                               </DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
-                                  <DialogTitle>Registrar Pago</DialogTitle>
+                                  <DialogTitle>Registrar Abono</DialogTitle>
                                   <DialogDescription>
-                                    Registra un pago para {credit.concept}
+                                    Abonar al crédito: {credit.concept}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <PaymentForm
