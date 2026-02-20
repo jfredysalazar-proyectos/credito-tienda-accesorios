@@ -18,7 +18,9 @@ import {
   getUpcomingExpiringCredits,
   getCompanyProfile,
   upsertCompanyProfile,
-  resetClientAccount
+  resetClientAccount,
+  getUserByUsername,
+  createUser
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
@@ -31,8 +33,44 @@ import { createWhatsappLog } from "./db";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { payments, credits } from "../drizzle/schema";
+import { signToken, verifyPassword, hashPassword } from "./_core/auth";
 
 export const appRouter = router({
+  // ============ AUTH ROUTERS ============
+  auth: router({
+    login: publicProcedure
+      .input(z.object({ username: z.string(), password: z.string() }))
+      .mutation(async ({ input }) => {
+        const user = await getUserByUsername(input.username);
+        if (!user || !(await verifyPassword(input.password, user.password))) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Usuario o contraseña incorrectos",
+          });
+        }
+        const token = signToken({ id: user.id, username: user.username });
+        return { token, user: { id: user.id, username: user.username } };
+      }),
+    register: publicProcedure
+      .input(z.object({ username: z.string(), password: z.string() }))
+      .mutation(async ({ input }) => {
+        const existingUser = await getUserByUsername(input.username);
+        if (existingUser) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "El nombre de usuario ya existe",
+          });
+        }
+        const hashedPassword = await hashPassword(input.password);
+        const user = await createUser({ username: input.username, password: hashedPassword });
+        const token = signToken({ id: user.id, username: user.username });
+        return { token, user: { id: user.id, username: user.username } };
+      }),
+    me: protectedProcedure.query(({ ctx }) => {
+      return ctx.user;
+    }),
+  }),
+
   // ============ CLIENT ROUTERS ============
   clients: router({
     create: protectedProcedure
