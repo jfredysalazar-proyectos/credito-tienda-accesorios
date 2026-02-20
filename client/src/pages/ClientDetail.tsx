@@ -62,6 +62,11 @@ export default function ClientDetail() {
     { enabled: isAuthenticated && clientId > 0 }
   );
 
+  const { data: companyProfile } = trpc.company.getProfile.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
   const createCreditMutation = trpc.credits.create.useMutation({
     onSuccess: (data: any) => {
       toast.success("Crédito registrado exitosamente");
@@ -419,7 +424,8 @@ export default function ClientDetail() {
               return;
             }
 
-            let message = `*RESUMEN DE CRÉDITOS PENDIENTES*\n\n`;
+            const companyName = companyProfile?.name ? ` CON ${companyProfile.name.toUpperCase()}` : "";
+            let message = `*RESUMEN DE CRÉDITOS PENDIENTES${companyName}*\n\n`;
             message += `Hola *${client.name}*, te envío el detalle de tus créditos activos:\n\n`;
             
             activeCredits.forEach((c) => {
