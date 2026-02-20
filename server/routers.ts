@@ -339,7 +339,7 @@ export const appRouter = router({
           ? new Date(Date.now() + input.creditDays * 24 * 60 * 60 * 1000)
           : null;
 
-        await createCredit({
+        const newCredit = {
           clientId: input.clientId,
           concept: input.concept,
           amount: input.amount.toString(),
@@ -347,7 +347,9 @@ export const appRouter = router({
           creditDays: input.creditDays,
           dueDate,
           status: "active",
-        });
+        };
+
+        await createCredit(newCredit);
 
         // Crear log de WhatsApp para envío automático
         await createWhatsappLog({
@@ -358,7 +360,11 @@ export const appRouter = router({
           status: "pending",
         });
 
-        return { success: true };
+        return { 
+          success: true,
+          ...newCredit,
+          dueDate: dueDate?.toISOString() // Devolver como string ISO para el frontend
+        };
       }),
 
     // Obtener créditos de un cliente
@@ -447,13 +453,15 @@ export const appRouter = router({
         }
 
         // Crear el pago
-        await createPayment({
+        const paymentData = {
           creditId: input.creditId,
           clientId: credit.clientId,
           amount: input.amount.toString(),
           paymentMethod: input.paymentMethod,
           notes: input.notes || null,
-        });
+        };
+
+        await createPayment(paymentData);
 
         // Actualizar el saldo del crédito (permitir saldos negativos)
         const newBalance = currentBalance - input.amount;
@@ -475,7 +483,11 @@ export const appRouter = router({
           status: "pending",
         });
 
-        return { success: true };
+        return { 
+          success: true, 
+          ...paymentData,
+          newBalance: newBalance.toString()
+        };
       }),
 
     // Obtener pagos de un crédito

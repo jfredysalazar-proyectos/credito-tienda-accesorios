@@ -70,8 +70,12 @@ export default function ClientDetail() {
       void utils.clients.getById.invalidate({ clientId });
       
       // Opción de enviar por WhatsApp
-      const message = `Hola ${client?.name}, te confirmo que hemos registrado tu nuevo crédito por "${data.concept}" por un valor de $${Number(data.amount).toLocaleString("es-CO")}. Fecha de vencimiento: ${new Date(data.dueDate).toLocaleDateString("es-CO")}. ¡Gracias por tu confianza!`;
-      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      const concept = data.concept || "un nuevo producto";
+      const amount = Number(data.amount || 0).toLocaleString("es-CO");
+      const dueDate = data.dueDate ? new Date(data.dueDate).toLocaleDateString("es-CO") : "N/A";
+      
+      const message = `Hola ${client?.name}, te confirmo que hemos registrado tu nuevo crédito por "${concept}" por un valor de $${amount}. Fecha de vencimiento: ${dueDate}. ¡Gracias por tu confianza!`;
+      const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
       
       toast("¿Deseas enviar el comprobante por WhatsApp?", {
         action: {
@@ -95,8 +99,11 @@ export default function ClientDetail() {
       void utils.payments.getHistoryByClient.invalidate({ clientId });
 
       // Opción de enviar por WhatsApp
-      const message = `Hola ${client?.name}, hemos recibido tu pago de $${Number(data.amount).toLocaleString("es-CO")}. Tu nuevo saldo es $${Number(data.newBalance || 0).toLocaleString("es-CO")}. ¡Muchas gracias!`;
-      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      const amount = Number(data.amount || 0).toLocaleString("es-CO");
+      const newBalance = Number(data.newBalance || 0).toLocaleString("es-CO");
+      
+      const message = `Hola ${client?.name}, hemos recibido tu pago de $${amount}. Tu nuevo saldo es $${newBalance}. ¡Muchas gracias!`;
+      const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
       
       toast("¿Deseas enviar el recibo por WhatsApp?", {
         action: {
@@ -140,8 +147,11 @@ export default function ClientDetail() {
       void utils.payments.getHistoryByClient.invalidate({ clientId });
 
       // Opción de enviar por WhatsApp
-      const message = `Hola ${client?.name}, hemos recibido tu pago general de $${Number(data.totalPaid).toLocaleString("es-CO")}. Tu saldo total adeudado ahora es de $${(totalBalance - data.totalPaid).toLocaleString("es-CO")}. ¡Muchas gracias!`;
-      const url = `https://wa.me/${client?.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+      const totalPaid = Number(data.totalPaid || 0);
+      const remainingBalance = Math.max(0, totalBalance - totalPaid);
+      
+      const message = `Hola ${client?.name}, hemos recibido tu pago general de $${totalPaid.toLocaleString("es-CO")}. Tu saldo total adeudado ahora es de $${remainingBalance.toLocaleString("es-CO")}. ¡Muchas gracias!`;
+      const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
       
       toast("¿Deseas enviar el recibo por WhatsApp?", {
         action: {
