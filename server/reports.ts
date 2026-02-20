@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import { autoTable } from "jspdf-autotable";
 import { getDb, getCompanyProfile } from "./db";
 import { eq } from "drizzle-orm";
 import { clients, credits, payments } from "../drizzle/schema";
@@ -77,7 +77,7 @@ export async function generateOverdueCreditsReport(userId: number): Promise<Buff
     ];
   });
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [["Cliente", "Concepto", "Monto Original", "Saldo", "Fecha Vencimiento", "Días Vencido"]],
     body: tableData,
     startY: y,
@@ -128,7 +128,7 @@ export async function generateClientDebtReport(userId: number): Promise<Buffer> 
     `${client.utilizationPercent}%`,
   ]);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [["Cliente", "Cédula", "Cupo Total", "Deuda Total", "Disponible", "% Utilización"]],
     body: tableData,
     startY: y,
@@ -201,7 +201,7 @@ export async function generatePaymentAnalysisReport(userId: number): Promise<Buf
     ];
   });
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [["Cliente", "Cantidad de Pagos", "Total Pagado"]],
     body: paymentsByClient,
     startY: y,

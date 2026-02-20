@@ -38,8 +38,10 @@ export default function Reports() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       toast.success(`${reportName} descargado exitosamente`);
-    } catch (error) {
-      toast.error(`Error al descargar ${reportName}`);
+    } catch (error: any) {
+      const msg = error?.message || error?.data?.message || `Error al descargar ${reportName}`;
+      toast.error(msg);
+      console.error(`[Reports] ${reportName}:`, error);
     }
   };
 
