@@ -33,7 +33,7 @@ import { createWhatsappLog } from "./db";
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { payments, credits } from "../drizzle/schema";
-import { signToken, verifyPassword, hashPassword } from "./_core/auth";
+import { signToken, verifyPassword, hashPassword } from "./auth";
 
 export const appRouter = router({
   // ============ AUTH ROUTERS ============
