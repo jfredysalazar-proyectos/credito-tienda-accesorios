@@ -372,6 +372,28 @@ export const appRouter = router({
 
         return result;
       }),
+
+    // Alias requerido por el frontend
+    createGeneral: protectedProcedure
+      .input(
+        z.object({
+          clientId: z.number(),
+          amount: z.number(),
+          paymentMethod: z.string(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const result = await createGeneralPayment(
+          input.clientId,
+          input.amount,
+          ctx.user.id,
+          input.paymentMethod,
+          input.notes
+        );
+
+        return result;
+      }),
   }),
 
   // ============ DASHBOARD ROUTERS ============
