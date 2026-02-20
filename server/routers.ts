@@ -177,6 +177,12 @@ export const appRouter = router({
 
         await createCredit(newCredit);
 
+        // Calcular el saldo total adeudado actualizado del cliente
+        const allCredits = await getCreditsbyClientId(input.clientId);
+        const totalBalance = allCredits
+          .filter((c) => c.status === "active")
+          .reduce((sum, c) => sum + Number(c.balance), 0);
+
         // Crear log de WhatsApp para envío automático
         await createWhatsappLog({
           clientId: input.clientId,
@@ -189,7 +195,8 @@ export const appRouter = router({
         return { 
           success: true,
           ...newCredit,
-          dueDate: dueDate?.toISOString() // Devolver como string ISO para el frontend
+          dueDate: dueDate?.toISOString(), // Devolver como string ISO para el frontend
+          totalBalance, // Saldo total adeudado del cliente tras el nuevo crédito
         };
       }),
 

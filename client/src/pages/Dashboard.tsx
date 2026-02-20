@@ -64,7 +64,8 @@ export default function Dashboard() {
       const client = clients?.find((c) => c.id === data.clientId);
       const amountFormatted = Number(data.amount || 0).toLocaleString("es-CO");
       const dueDate = data.dueDate ? new Date(data.dueDate).toLocaleDateString("es-CO") : "N/A";
-      const message = `Hola *${client?.name || selectedClientName}*, te confirmo que hemos registrado tu nuevo crédito:\n\n📝 *${data.concept}*\n💵 Valor: *$${amountFormatted}*\n📅 Fecha de vencimiento: *${dueDate}*\n\n¡Gracias por tu confianza!`;
+      const totalBalanceFormatted = Number(data.totalBalance || 0).toLocaleString("es-CO");
+      const message = `Hola *${client?.name || selectedClientName}*, te confirmo que hemos registrado tu nuevo crédito:\n\n📝 *${data.concept}*\n💵 Valor: *$${amountFormatted}*\n📅 Fecha de vencimiento: *${dueDate}*\n\n🔴 Tu saldo total adeudado es: *$${totalBalanceFormatted}*\n\n¡Gracias por tu confianza!`;
       const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
 
       toast("¿Deseas enviar el comprobante por WhatsApp?", {

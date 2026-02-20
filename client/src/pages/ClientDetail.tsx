@@ -79,7 +79,7 @@ export default function ClientDetail() {
       const concept = data.concept || "un nuevo producto";
       const amount = Number(data.amount || 0).toLocaleString("es-CO");
       const dueDate = data.dueDate ? new Date(data.dueDate).toLocaleDateString("es-CO") : "N/A";
-      const newTotalBalance = (totalBalance + Number(data.amount || 0)).toLocaleString("es-CO");
+      const newTotalBalance = Number(data.totalBalance ?? (totalBalance + Number(data.amount || 0))).toLocaleString("es-CO");
       
       const message = `Hola *${client?.name}*, te confirmo que hemos registrado tu nuevo crédito:\n\n📝 *${concept}*\n💵 Valor: *$${amount}*\n📅 Fecha de vencimiento: *${dueDate}*\n\n🔴 Tu saldo total adeudado es: *$${newTotalBalance}*\n\n¡Gracias por tu confianza!`;
       const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
