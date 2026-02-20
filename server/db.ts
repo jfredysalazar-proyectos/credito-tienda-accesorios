@@ -484,3 +484,31 @@ export async function getUpcomingExpiringCredits(userId: number, days: number = 
     };
   });
 }
+
+// ============ RESET CLIENT ACCOUNT FUNCTION ============
+
+export async function resetClientAccount(clientId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Verificar que el cliente pertenece al usuario
+  const client = await getClientById(clientId, userId);
+  if (!client) throw new Error("Client not found");
+
+  // Eliminar pagos asociados a los créditos del cliente
+  const clientCredits = await db.select().from(credits).where(eq(credits.clientId, clientId));
+  const creditIds = clientCredits.map(c => c.id);
+
+  if (creditIds.length > 0) {
+    for (const creditId of creditIds) {
+      await db.delete(payments).where(eq(payments.creditId, creditId));
+    }
+    // Eliminar los créditos
+    await db.delete(credits).where(eq(credits.clientId, clientId));
+  }
+
+  // Eliminar logs de WhatsApp asociados
+  await db.delete(whatsappLogs).where(eq(whatsappLogs.clientId, clientId));
+
+  return { success: true };
+}

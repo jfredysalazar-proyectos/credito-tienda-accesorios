@@ -267,14 +267,18 @@ export const appRouter = router({
       return listClients(ctx.user.id);
     }),
 
-    // Buscar clientes
-    search: protectedProcedure
+    // Buscar cliente    search: protectedProcedure
       .input(z.object({ query: z.string() }))
       .query(async ({ ctx, input }) => {
         return searchClients(ctx.user.id, input.query);
       }),
 
-    // Obtener cliente por ID
+    resetAccount: protectedProcedure
+      .input(z.object({ clientId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return resetClientAccount(input.clientId, ctx.user.id);
+      }),
+  }),  // Obtener cliente por ID
     getById: protectedProcedure
       .input(z.object({ clientId: z.number() }))
       .query(async ({ ctx, input }) => {

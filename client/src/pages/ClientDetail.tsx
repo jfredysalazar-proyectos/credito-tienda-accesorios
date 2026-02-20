@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText, MessageCircle } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText, MessageCircle, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -40,6 +40,7 @@ export default function ClientDetail() {
   const [isNewCreditOpen, setIsNewCreditOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
   const [isGeneralPaymentOpen, setIsGeneralPaymentOpen] = useState(false);
   const [selectedCreditId, setSelectedCreditId] = useState<number | null>(null);
   const [expandedCredits, setExpandedCredits] = useState<Set<number>>(new Set());
@@ -175,6 +176,19 @@ export default function ClientDetail() {
     },
     onError: (error) => {
       toast.error(error.message || "Error al registrar el pago general");
+    },
+  });
+
+  const resetAccountMutation = trpc.clients.resetAccount.useMutation({
+    onSuccess: () => {
+      toast.success("Cuenta reseteada exitosamente");
+      setIsResetOpen(false);
+      void utils.credits.getByClientId.invalidate({ clientId });
+      void utils.clients.getById.invalidate({ clientId });
+      void utils.payments.getHistoryByClient.invalidate({ clientId });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al resetear la cuenta");
     },
   });
 
@@ -454,6 +468,41 @@ export default function ClientDetail() {
           <MessageCircle className="mr-2 h-4 w-4" />
           Enviar Resumen WhatsApp
         </Button>
+
+        <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+          <DialogTrigger asChild>
+            <Button variant="destructive">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Resetear Cuenta
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">¿Estás absolutamente seguro?</DialogTitle>
+              <DialogDescription>
+                Esta acción **eliminará permanentemente** todo el historial de créditos y pagos de este cliente. 
+                No se puede deshacer. Úsalo solo para iniciar un nuevo periodo.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-4 mt-4">
+              <Button variant="outline" onClick={() => setIsResetOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => resetAccountMutation.mutate({ clientId })}
+                disabled={resetAccountMutation.isPending}
+              >
+                {resetAccountMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Sí, Resetear Cuenta
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Credits Table */}
