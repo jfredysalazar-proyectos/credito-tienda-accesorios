@@ -105,9 +105,17 @@ export default function ClientDetail() {
 
       // Opción de enviar por WhatsApp
       const amount = Number(data.amount || 0).toLocaleString("es-CO");
-      const newBalance = Number(data.newBalance || 0).toLocaleString("es-CO");
+      const creditBalance = Number(data.newBalance || 0).toLocaleString("es-CO");
+      const concept = data.concept || "tu crédito";
       
-      const message = `Hola ${client?.name}, hemos recibido tu pago de $${amount}. Tu nuevo saldo es $${newBalance}. ¡Muchas gracias!`;
+      // Calcular el nuevo saldo total restando el abono del saldo total actual
+      const newTotalBalance = Math.max(0, totalBalance - Number(data.amount || 0)).toLocaleString("es-CO");
+      
+      const message = `Hola *${client?.name}*, hemos recibido tu pago de *$${amount}* para el crédito de *"${concept}"*.\n\n` +
+                      `✅ El nuevo saldo de este crédito es: *$${creditBalance}*\n` +
+                      `🔴 Tu saldo de deuda total es: *$${newTotalBalance}*\n\n` +
+                      `¡Muchas gracias por tu pago!`;
+                      
       const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
       
       toast("¿Deseas enviar el recibo por WhatsApp?", {

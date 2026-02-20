@@ -486,6 +486,7 @@ export const appRouter = router({
         return { 
           success: true, 
           ...paymentData,
+          concept: credit.concept,
           newBalance: newBalance.toString()
         };
       }),
