@@ -688,7 +688,7 @@ function NewCreditForm({ clientId, onSubmit, isLoading }: any) {
         onClick={() => {
           onSubmit({
             concept,
-            amount,
+            amount: parseFloat(amount) || 0,
             creditDays: parseInt(creditDays) || 0,
           });
         }}
@@ -756,7 +756,7 @@ function PaymentForm({ creditId, balance, onSubmit, isLoading }: any) {
       <Button
         onClick={() => {
           onSubmit({
-            amount,
+            amount: parseFloat(amount) || 0,
             paymentMethod,
             notes: notes || undefined,
           });

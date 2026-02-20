@@ -45,7 +45,7 @@ export default function QuickCredit() {
     createCreditMutation.mutate({
       clientId: selectedClientId,
       concept,
-      amount,
+      amount: parseFloat(amount) || 0,
       creditDays: parseInt(creditDays),
     });
   };
