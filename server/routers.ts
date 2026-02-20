@@ -672,6 +672,20 @@ export const appRouter = router({
         const clientCredits = await getCreditsbyClientId(input.clientId);
         const clientPayments = await db.select().from(payments).where(eq(payments.clientId, input.clientId));
 
+        const paymentMethodMap: Record<string, string> = {
+          'cash': 'Efectivo',
+          'efectivo': 'Efectivo',
+          'transfer': 'Transferencia',
+          'transferencia': 'Transferencia',
+          'check': 'Cheque',
+          'cheque': 'Cheque',
+          'credit_card': 'Tarjeta de Crédito',
+          'debit_card': 'Tarjeta Débito',
+          'general_payment': 'Pago General',
+          'other': 'Otro',
+          'otro': 'Otro'
+        };
+
         // Consolidar transacciones
         const allTransactions: any[] = [
           ...clientCredits.map(c => ({
@@ -681,13 +695,16 @@ export const appRouter = router({
             concept: c.concept,
             createdAt: new Date(c.createdAt)
           })),
-          ...clientPayments.map(p => ({
-            id: p.id,
-            type: 'abono',
-            amount: Number(p.amount),
-            concept: 'Abono a crédito',
-            createdAt: new Date(p.createdAt)
-          }))
+          ...clientPayments.map(p => {
+            const method = paymentMethodMap[p.paymentMethod] || p.paymentMethod || '';
+            return {
+              id: p.id,
+              type: 'abono',
+              amount: Number(p.amount),
+              concept: `Abono a crédito ${method}`.trim(),
+              createdAt: new Date(p.createdAt)
+            };
+          })
         ];
 
         // Ordenar por fecha
