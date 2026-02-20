@@ -32,6 +32,7 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
         'credit_card': 'Tarjeta de Crédito',
         'debit_card': 'Tarjeta Débito',
         'general_payment': 'Pago General',
+        'devolucion': 'Devolución',
         'other': 'Otro'
       };
 

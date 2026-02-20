@@ -682,6 +682,7 @@ export const appRouter = router({
           'credit_card': 'Tarjeta de Crédito',
           'debit_card': 'Tarjeta Débito',
           'general_payment': 'Pago General',
+          'devolucion': 'Devolución',
           'other': 'Otro',
           'otro': 'Otro'
         };

@@ -344,16 +344,18 @@ export default function ClientDetail() {
               </div>
               <div>
                 <Label htmlFor="payment-method">Forma de Pago</Label>
-                <Select value={generalPaymentMethod} onValueChange={setGeneralPaymentMethod}>
-                  <SelectTrigger id="payment-method">
+                     <Select value={generalPaymentMethod} onValueChange={setGeneralPaymentMethod}>
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Efectivo</SelectItem>
                     <SelectItem value="transfer">Transferencia</SelectItem>
                     <SelectItem value="check">Cheque</SelectItem>
-                    <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
-                    <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
+                    <SelectItem value="devolucion">Devolución</SelectItem>
+                    <SelectItem value="other">Otro</SelectItem>
+                  </SelectContent>
+                </Select>ctItem value="debit_card">Tarjeta Débito</SelectItem>
                     <SelectItem value="other">Otro</SelectItem>
                   </SelectContent>
                 </Select>
@@ -652,6 +654,7 @@ function PaymentForm({ creditId, balance, onSubmit, isLoading }: any) {
             <SelectItem value="efectivo">Efectivo</SelectItem>
             <SelectItem value="transferencia">Transferencia</SelectItem>
             <SelectItem value="cheque">Cheque</SelectItem>
+            <SelectItem value="devolucion">Devolución</SelectItem>
             <SelectItem value="otro">Otro</SelectItem>
           </SelectContent>
         </Select>
