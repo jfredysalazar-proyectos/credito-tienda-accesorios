@@ -46,7 +46,7 @@ export default function EditClientForm({ client, onClose }: EditClientFormProps)
     }
 
     updateClientMutation.mutate({
-      clientId: client.id,
+      id: client.id,
       name,
       cedula,
       whatsappNumber,
