@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText, MessageCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -407,6 +407,38 @@ export default function ClientDetail() {
             <FileText className="mr-2 h-4 w-4" />
           )}
           Generar Estado de Cuenta
+        </Button>
+
+        <Button 
+          variant="outline"
+          className="text-green-600 border-green-600 hover:bg-green-50"
+          onClick={() => {
+            const activeCredits = credits?.filter(c => c.status === 'active') || [];
+            if (activeCredits.length === 0) {
+              toast.info("El cliente no tiene créditos pendientes");
+              return;
+            }
+
+            let message = `*RESUMEN DE CRÉDITOS PENDIENTES*\n\n`;
+            message += `Hola *${client.name}*, te envío el detalle de tus créditos activos:\n\n`;
+            
+            activeCredits.forEach((c) => {
+              const date = new Date(c.createdAt).toLocaleDateString("es-CO");
+              const balance = Number(c.balance).toLocaleString("es-CO");
+              message += `📅 ${date}\n📝 ${c.concept}\n💰 Saldo: *$${balance}*\n\n`;
+            });
+
+            message += `--------------------------\n`;
+            message += `🔴 *DEUDA TOTAL: $${totalBalance.toLocaleString("es-CO")}*\n`;
+            message += `--------------------------\n\n`;
+            message += `Quedo atento a cualquier duda. ¡Gracias!`;
+
+            const url = `https://wa.me/${client.whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
+            window.open(url, "_blank");
+          }}
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          Enviar Resumen WhatsApp
         </Button>
       </div>
 
