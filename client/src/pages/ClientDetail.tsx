@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText, MessageCircle, RefreshCw } from "lucide-react";
+import { Plus, ArrowLeft, Send, Loader2, Edit, ChevronDown, ChevronUp, FileText, MessageCircle, RefreshCw, FileSpreadsheet } from "lucide-react";
 import { useLocation } from "wouter";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -189,6 +189,20 @@ export default function ClientDetail() {
     },
     onError: (error) => {
       toast.error(error.message || "Error al resetear la cuenta");
+    },
+  });
+
+  const downloadBackupMutation = trpc.whatsapp.downloadBackup.useMutation({
+    onSuccess: (data) => {
+      const linkSource = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${data.excel}`;
+      const downloadLink = document.createElement("a");
+      downloadLink.href = linkSource;
+      downloadLink.download = data.filename;
+      downloadLink.click();
+      toast.success("Backup de cuenta descargado correctamente");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al generar el backup");
     },
   });
 
@@ -434,6 +448,20 @@ export default function ClientDetail() {
             <FileText className="mr-2 h-4 w-4" />
           )}
           Generar Estado de Cuenta
+        </Button>
+
+        <Button 
+          variant="outline"
+          className="text-blue-600 border-blue-600 hover:bg-blue-50"
+          onClick={() => downloadBackupMutation.mutate({ clientId })}
+          disabled={downloadBackupMutation.isPending}
+        >
+          {downloadBackupMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+          )}
+          Backup de Cuenta (Excel)
         </Button>
 
         <Button 

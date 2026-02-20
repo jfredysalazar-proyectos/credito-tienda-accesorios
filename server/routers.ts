@@ -22,6 +22,7 @@ import {
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
+import { generateClientBackupExcel } from "./excel-generator";
 import { 
   generateOverdueCreditsReport, 
   generateClientDebtReport, 
@@ -468,6 +469,81 @@ export const appRouter = router({
         return {
           success: true,
           pdf: base64Pdf,
+          filename,
+        };
+      }),
+
+    downloadBackup: protectedProcedure
+      .input(z.object({ clientId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const client = await getClientById(input.clientId, ctx.user.id);
+        if (!client) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "No tienes permiso para acceder a este cliente",
+          });
+        }
+
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        const clientCredits = await getCreditsbyClientId(input.clientId);
+        const clientPayments = await db.select().from(payments).where(eq(payments.clientId, input.clientId));
+
+        const paymentMethodMap: Record<string, string> = {
+          'cash': 'Efectivo',
+          'efectivo': 'Efectivo',
+          'transfer': 'Transferencia',
+          'transferencia': 'Transferencia',
+          'check': 'Cheque',
+          'cheque': 'Cheque',
+          'credit_card': 'Tarjeta de Crédito',
+          'debit_card': 'Tarjeta Débito',
+          'general_payment': 'Pago General',
+          'devolucion': 'Devolución',
+          'other': 'Otro',
+          'otro': 'Otro'
+        };
+
+        const allTransactions: any[] = [
+          ...clientCredits.map(c => ({
+            id: c.id,
+            type: 'prestamo',
+            amount: Number(c.amount),
+            concept: c.concept,
+            createdAt: new Date(c.createdAt)
+          })),
+          ...clientPayments.map(p => {
+            const method = paymentMethodMap[p.paymentMethod] || p.paymentMethod || '';
+            return {
+              id: p.id,
+              type: 'abono',
+              amount: Number(p.amount),
+              concept: `Abono a crédito ${method}`.trim(),
+              createdAt: new Date(p.createdAt)
+            };
+          })
+        ];
+
+        allTransactions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+        let runningBalance = 0;
+        const transactionsWithBalance = allTransactions.map(t => {
+          if (t.type === 'prestamo') {
+            runningBalance += t.amount;
+          } else {
+            runningBalance -= t.amount;
+          }
+          return { ...t, runningBalance };
+        });
+
+        const excelBuffer = await generateClientBackupExcel(client, transactionsWithBalance);
+        const base64Excel = excelBuffer.toString("base64");
+        const filename = `backup-cuenta-${client.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.xlsx`;
+
+        return {
+          success: true,
+          excel: base64Excel,
           filename,
         };
       }),
