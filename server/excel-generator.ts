@@ -78,3 +78,89 @@ export async function generateClientBackupExcel(client: any, transactions: any[]
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);
 }
+
+export async function generateGeneralBackupExcel(clientsWithData: any[]) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Credito Tienda Accesorios';
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet('Resumen General de Créditos');
+
+  // Estilos
+  const titleStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true, size: 16, color: { argb: 'FF1E3A8A' } },
+    alignment: { horizontal: 'center' }
+  };
+
+  const headerStyle: Partial<ExcelJS.Style> = {
+    font: { bold: true, color: { argb: 'FFFFFFFF' } },
+    fill: {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF1E293B' }
+    },
+    alignment: { horizontal: 'center' }
+  };
+
+  // Título
+  sheet.mergeCells('A1:G1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = 'BACKUP GENERAL DE CLIENTES Y CRÉDITOS';
+  titleCell.style = titleStyle;
+
+  sheet.addRow(['Fecha de Generación:', new Date().toLocaleString()]);
+  sheet.addRow([]);
+
+  // Encabezados
+  const headers = ['Nombre Cliente', 'Cédula/NIT', 'WhatsApp', 'Ciudad', 'Cupo Total', 'Saldo Adeudado', 'Cupo Disponible'];
+  const headerRow = sheet.addRow(headers);
+  headerRow.eachCell((cell) => {
+    cell.style = headerStyle;
+  });
+
+  // Datos de Clientes
+  clientsWithData.forEach((client) => {
+    const row = sheet.addRow([
+      client.name,
+      client.cedula,
+      client.whatsappNumber,
+      client.city || 'N/A',
+      client.creditLimit,
+      client.totalDebt,
+      client.creditLimit - client.totalDebt
+    ]);
+
+    // Formato moneda
+    [5, 6, 7].forEach(col => {
+      row.getCell(col).numFmt = '"$"#,##0';
+    });
+
+    // Color rojo si tiene deuda
+    if (client.totalDebt > 0) {
+      row.getCell(6).font = { color: { argb: 'FFDC2626' }, bold: true };
+    }
+  });
+
+  // Totales al final
+  sheet.addRow([]);
+  const totalDebt = clientsWithData.reduce((acc, c) => acc + c.totalDebt, 0);
+  const totalLimit = clientsWithData.reduce((acc, c) => acc + c.creditLimit, 0);
+  
+  const totalRow = sheet.addRow(['TOTALES GENERALES', '', '', '', totalLimit, totalDebt, totalLimit - totalDebt]);
+  totalRow.font = { bold: true };
+  [5, 6, 7].forEach(col => {
+    totalRow.getCell(col).numFmt = '"$"#,##0';
+  });
+
+  // Ajustar anchos
+  sheet.getColumn(1).width = 30;
+  sheet.getColumn(2).width = 15;
+  sheet.getColumn(3).width = 15;
+  sheet.getColumn(4).width = 15;
+  sheet.getColumn(5).width = 18;
+  sheet.getColumn(6).width = 18;
+  sheet.getColumn(7).width = 18;
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}

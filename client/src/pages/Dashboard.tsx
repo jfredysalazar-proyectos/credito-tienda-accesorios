@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Plus, Users, TrendingUp, AlertCircle, Loader2, CreditCard } from "lucide-react";
+import { Plus, Users, TrendingUp, AlertCircle, Loader2, CreditCard, Download, FileSpreadsheet } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -80,6 +80,29 @@ export default function Dashboard() {
     },
   });
 
+  const downloadBackupMutation = trpc.reports.downloadGeneralBackup.useMutation({
+    onSuccess: (data) => {
+      const byteCharacters = atob(data.excel);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", data.filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Backup general descargado correctamente");
+    },
+    onError: (error) => {
+      toast.error("Error al generar el backup: " + error.message);
+    },
+  });
+
   const handleSubmitCredit = () => {
     if (!selectedClientId) {
       toast.error("Selecciona un cliente");
@@ -117,11 +140,26 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6 md:space-y-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Bienvenido, {user?.name || "Usuario"}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Bienvenido, {user?.name || "Usuario"}
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          className="w-full sm:w-auto bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+          onClick={() => downloadBackupMutation.mutate()}
+          disabled={downloadBackupMutation.isPending}
+        >
+          {downloadBackupMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+          )}
+          Backup General (Excel)
+        </Button>
       </div>
 
       {/* Summary Cards */}

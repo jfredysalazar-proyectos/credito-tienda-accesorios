@@ -22,7 +22,7 @@ import {
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
-import { generateClientBackupExcel } from "./excel-generator";
+import { generateClientBackupExcel, generateGeneralBackupExcel } from "./excel-generator";
 import { 
   generateOverdueCreditsReport, 
   generateClientDebtReport, 
@@ -602,6 +602,36 @@ export const appRouter = router({
         filename: `reporte-analisis-pagos-${new Date().toISOString().split('T')[0]}.pdf`,
         data: buffer.toString('base64'),
       };
+    }),
+
+    downloadGeneralBackup: protectedProcedure.mutation(async ({ ctx }) => {
+      try {
+        const allClients = await listClients(ctx.user.id);
+        const clientsWithData = await Promise.all(allClients.map(async (client) => {
+          const clientCredits = await getCreditsbyClientId(client.id);
+          const totalDebt = clientCredits
+            .filter(c => c.status === 'active')
+            .reduce((sum, c) => sum + Number(c.balance), 0);
+          
+          return {
+            ...client,
+            totalDebt
+          };
+        }));
+
+        const excelBuffer = await generateGeneralBackupExcel(clientsWithData);
+        const base64Excel = excelBuffer.toString("base64");
+        const filename = `backup-general-clientes-${new Date().toISOString().split("T")[0]}.xlsx`;
+
+        return {
+          success: true,
+          excel: base64Excel,
+          filename,
+        };
+      } catch (error) {
+        console.error("[General Backup] Error:", error);
+        throw error;
+      }
     }),
   }),
 
