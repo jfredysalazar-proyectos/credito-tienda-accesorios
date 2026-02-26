@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -31,9 +31,12 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
-        <Route path={"/login"} component={Login} />
-        <Route path={"/404"} component={NotFound} />
-        <Route component={Login} />
+        <Route path="/login" component={Login} />
+        <Route path="/404" component={NotFound} />
+        {/* Cualquier otra ruta redirige a login si no está autenticado */}
+        <Route>
+          <Redirect to="/login" />
+        </Route>
       </Switch>
     );
   }
@@ -41,16 +44,19 @@ function Router() {
   return (
     <DashboardLayout>
       <Switch>
-        <Route path={"/"} component={Dashboard} />
-        <Route path={"/dashboard"} component={Dashboard} />
-        <Route path={"/nuevo-credito"} component={QuickCredit} />
-        <Route path={"/clientes"} component={ClientsList} />
-        <Route path={"/clientes/nuevo"} component={NewClient} />
-        <Route path={"/clientes/:id"} component={ClientDetail} />
-        <Route path={"/reportes"} component={Reports} />
-        <Route path={"/perfil-empresa"} component={CompanyProfile} />
-        <Route path={"/recordatorios"} component={Reminders} />
-        <Route path={"/404"} component={NotFound} />
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/nuevo-credito" component={QuickCredit} />
+        <Route path="/clientes" component={ClientsList} />
+        <Route path="/clientes/nuevo" component={NewClient} />
+        <Route path="/clientes/:id" component={ClientDetail} />
+        <Route path="/reportes" component={Reports} />
+        <Route path="/perfil-empresa" component={CompanyProfile} />
+        <Route path="/recordatorios" component={Reminders} />
+        <Route path="/login">
+          <Redirect to="/dashboard" />
+        </Route>
+        <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>
