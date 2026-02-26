@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const utils = trpc.useUtils();
+  const { isAuthenticated, loading } = useAuth();
+
+  // Si ya está autenticado, redirigir al dashboard
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      setLocation("/dashboard");
+    }
+  }, [isAuthenticated, loading, setLocation]);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async () => {
@@ -29,13 +38,22 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
+    if (!username || !password) {
       toast.error("Por favor completa todos los campos");
       return;
     }
 
-    loginMutation.mutate({ email, password });
+    // El servidor espera 'username' (que se mapea a email)
+    loginMutation.mutate({ username, password });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -57,13 +75,13 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Email / Usuario</Label>
                 <Input
-                  id="email"
-                  type="email"
+                  id="username"
+                  type="text"
                   placeholder="admin@creditotienda.local"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   disabled={loginMutation.isPending}
                   className="mt-2"
                 />
