@@ -4,7 +4,6 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ClientsList from "./pages/ClientsList";
@@ -32,8 +31,6 @@ function Router() {
     return (
       <Switch>
         <Route path="/login" component={Login} />
-        <Route path="/404" component={NotFound} />
-        {/* Cualquier otra ruta redirige a login si no está autenticado */}
         <Route>
           <Redirect to="/login" />
         </Route>
@@ -56,7 +53,6 @@ function Router() {
         <Route path="/login">
           <Redirect to="/dashboard" />
         </Route>
-        <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
     </DashboardLayout>

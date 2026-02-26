@@ -16,11 +16,6 @@ export function useAuth(options?: UseAuthOptions) {
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
-    // Evitar que el error de autenticación se propague al manejador global de QueryCache
-    // si solo estamos verificando la sesión
-    meta: {
-      disableGlobalErrorRedirect: true
-    }
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -47,29 +42,24 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    if (meQuery.data) {
+    const user = meQuery.data ?? null;
+    if (user) {
       localStorage.setItem(
         "manus-runtime-user-info",
-        JSON.stringify(meQuery.data)
+        JSON.stringify(user)
       );
     }
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user,
+      loading: meQuery.isLoading,
+      error: meQuery.error,
+      isAuthenticated: Boolean(user),
     };
-  }, [
-    meQuery.data,
-    meQuery.error,
-    meQuery.isLoading,
-    logoutMutation.error,
-    logoutMutation.isPending,
-  ]);
+  }, [meQuery.data, meQuery.isLoading, meQuery.error]);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
-    if (meQuery.isLoading || logoutMutation.isPending) return;
+    if (meQuery.isLoading) return;
     if (state.isAuthenticated) return;
     if (typeof window === "undefined") return;
     
@@ -80,7 +70,6 @@ export function useAuth(options?: UseAuthOptions) {
   }, [
     redirectOnUnauthenticated,
     redirectPath,
-    logoutMutation.isPending,
     meQuery.isLoading,
     state.isAuthenticated,
   ]);
