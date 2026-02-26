@@ -4,10 +4,15 @@ import { useCallback, useMemo } from "react";
 
 export function useAuth() {
   const utils = trpc.useUtils();
+  
+  // Determinar si estamos en la página de login para evitar peticiones automáticas
+  const isLoginPage = typeof window !== "undefined" && window.location.pathname === "/login";
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    // DESACTIVAR COMPLETAMENTE LA CONSULTA SI ESTAMOS EN LOGIN
+    enabled: !isLoginPage,
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -37,11 +42,11 @@ export function useAuth() {
     const user = meQuery.data ?? null;
     return {
       user,
-      loading: meQuery.isLoading,
+      loading: meQuery.isLoading && !isLoginPage,
       error: meQuery.error,
       isAuthenticated: Boolean(user),
     };
-  }, [meQuery.data, meQuery.isLoading, meQuery.error]);
+  }, [meQuery.data, meQuery.isLoading, meQuery.error, isLoginPage]);
 
   return {
     ...state,
