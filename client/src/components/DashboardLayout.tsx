@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Plus, FileText, Building2, MessageSquare } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Plus, FileText, Building2, MessageSquare, AlertTriangle } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -34,6 +34,7 @@ const menuItems = [
   { icon: FileText, label: "Reportes", path: "/reportes" },
   { icon: Building2, label: "Perfil Empresa", path: "/perfil-empresa" },
   { icon: MessageSquare, label: "Recordatorios", path: "/recordatorios" },
+  { icon: AlertTriangle, label: "Créditos Vencidos", path: "/creditos-vencidos" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

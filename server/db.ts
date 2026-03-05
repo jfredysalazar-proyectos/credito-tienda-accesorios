@@ -485,6 +485,55 @@ export async function getUpcomingExpiringCredits(userId: number, days: number = 
   });
 }
 
+// ============ OVERDUE CREDITS FUNCTION ============
+
+export async function getOverdueCredits(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Obtener todos los clientes del usuario
+  const userClients = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.userId, userId));
+
+  const clientIds = userClients.map((c) => c.id);
+  if (clientIds.length === 0) return [];
+
+  const now = new Date();
+
+  // Obtener todos los créditos
+  const allCredits = await db.select().from(credits);
+
+  // Filtrar créditos vencidos: tienen dueDate en el pasado y status activo
+  // O bien tienen status 'overdue'
+  const overdueCredits = allCredits.filter((c) => {
+    if (!clientIds.includes(c.clientId)) return false;
+    if (c.status === 'paid') return false;
+    if (c.status === 'overdue') return true;
+    if (c.status === 'active' && c.dueDate) {
+      const dueDate = new Date(c.dueDate);
+      return dueDate < now;
+    }
+    return false;
+  });
+
+  // Enriquecer con datos del cliente
+  return overdueCredits.map(credit => {
+    const client = userClients.find(c => c.id === credit.clientId);
+    const dueDate = credit.dueDate ? new Date(credit.dueDate) : null;
+    const daysOverdue = dueDate
+      ? Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+    return {
+      ...credit,
+      clientName: client?.name,
+      clientWhatsapp: client?.whatsappNumber,
+      daysOverdue,
+    };
+  });
+}
+
 // ============ RESET CLIENT ACCOUNT FUNCTION ============
 
 export async function resetClientAccount(clientId: number, userId: number) {

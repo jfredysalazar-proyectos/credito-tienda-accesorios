@@ -13,6 +13,7 @@ import QuickCredit from "./pages/QuickCredit";
 import Reports from "./pages/Reports";
 import CompanyProfile from "./pages/CompanyProfile";
 import Reminders from "./pages/Reminders";
+import OverdueCredits from "./pages/OverdueCredits";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "./components/DashboardLayout";
 
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/reportes" component={Reports} />
         <Route path="/perfil-empresa" component={CompanyProfile} />
         <Route path="/recordatorios" component={Reminders} />
+        <Route path="/creditos-vencidos" component={OverdueCredits} />
         <Route path="/login">
           <Redirect to="/dashboard" />
         </Route>

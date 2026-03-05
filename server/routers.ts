@@ -18,7 +18,8 @@ import {
   getUpcomingExpiringCredits,
   getCompanyProfile,
   upsertCompanyProfile,
-  resetClientAccount
+  resetClientAccount,
+  getOverdueCredits
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { generatePaymentHistoryPDF, generateAccountStatementPDF } from "./pdf-generator";
@@ -416,6 +417,11 @@ export const appRouter = router({
       .input(z.object({ days: z.number().default(3) }))
       .query(async ({ ctx, input }) => {
         return getUpcomingExpiringCredits(ctx.user.id, input.days);
+      }),
+
+    getOverdueCredits: protectedProcedure
+      .query(async ({ ctx }) => {
+        return getOverdueCredits(ctx.user.id);
       }),
 
     sendStatement: protectedProcedure
