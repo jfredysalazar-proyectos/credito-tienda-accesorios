@@ -37,9 +37,12 @@ export default function OverdueCredits() {
       `💰 *Monto original:* $${Number(credit.amount).toLocaleString("es-CO")}\n` +
       `🔴 *Saldo pendiente:* $${Number(credit.balance).toLocaleString("es-CO")}\n` +
       `📅 *Fecha de vencimiento:* ${dueDateStr}${daysText}\n\n` +
-      `Le invitamos cordialmente a acercarse a nuestra tienda o comunicarse con nosotros para ` +
-      `ponerse al día con su obligación. Estamos dispuestos a ayudarle a encontrar la mejor solución.\n\n` +
-      `¡Gracias por su atención y esperamos contar con su pronto pago! 🙏`
+      `Le invitamos cordialmente a realizar su pago a través de los siguientes medios:\n\n` +
+      `🏦 *Cuentas Bancarias:*\n` +
+      `Bancolombia Ahorros 05921737175\n` +
+      `Nequi o Daviplata al 3216413680\n` +
+      `Llave 0038993804\n\n` +
+      `¡Gracias por preferirnos y esperamos contar con su pronto pago! 🙏`
     );
   };
 
