@@ -72,7 +72,8 @@ export function useAuth() {
       error: meQuery.error,
       isAuthenticated: Boolean(user),
     };
-  }, [meQuery.data, meQuery.isLoading, meQuery.error, isLoginPage]);}
+  }, [meQuery.data, meQuery.isLoading, meQuery.error, isLoginPage]);
+
 
   return {
     ...state,
