@@ -63,13 +63,16 @@ export function useAuth() {
 
   const state = useMemo(() => {
     const user = meQuery.data ?? null;
+    // Si estamos en login, loading siempre es false (la consulta está desactivada)
+    // Si no estamos en login, loading es true solo si la consulta está cargando
+    const isLoading = isLoginPage ? false : meQuery.isLoading;
     return {
       user,
-      loading: meQuery.isLoading && !isLoginPage,
+      loading: isLoading,
       error: meQuery.error,
       isAuthenticated: Boolean(user),
     };
-  }, [meQuery.data, meQuery.isLoading, meQuery.error, isLoginPage]);
+  }, [meQuery.data, meQuery.isLoading, meQuery.error, isLoginPage]);}
 
   return {
     ...state,
