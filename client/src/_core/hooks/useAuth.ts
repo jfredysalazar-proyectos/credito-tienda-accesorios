@@ -1,12 +1,22 @@
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 
 export function useAuth() {
   const utils = trpc.useUtils();
+  const [isLoginPage, setIsLoginPage] = useState(false);
+  const [shouldRefetch, setShouldRefetch] = useState(false);
   
-  // Determinar si estamos en la página de login para evitar peticiones automáticas
-  const isLoginPage = typeof window !== "undefined" && window.location.pathname === "/login";
+  // Actualizar el estado de la página de login
+  useEffect(() => {
+    const checkLoginPage = () => {
+      setIsLoginPage(window.location.pathname === "/login");
+    };
+    
+    checkLoginPage();
+    window.addEventListener("popstate", checkLoginPage);
+    return () => window.removeEventListener("popstate", checkLoginPage);
+  }, []);
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
@@ -14,10 +24,19 @@ export function useAuth() {
     // DESACTIVAR COMPLETAMENTE LA CONSULTA SI ESTAMOS EN LOGIN
     enabled: !isLoginPage,
   });
+  
+  // Refetch cuando sea necesario (después del login)
+  useEffect(() => {
+    if (shouldRefetch && !isLoginPage) {
+      meQuery.refetch();
+      setShouldRefetch(false);
+    }
+  }, [shouldRefetch, isLoginPage, meQuery]);
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       utils.auth.me.setData(undefined, null);
+      utils.auth.me.invalidate();
     },
   });
 
@@ -37,6 +56,10 @@ export function useAuth() {
       await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
+  
+  const triggerRefetch = useCallback(() => {
+    setShouldRefetch(true);
+  }, []);
 
   const state = useMemo(() => {
     const user = meQuery.data ?? null;
@@ -52,5 +75,6 @@ export function useAuth() {
     ...state,
     refresh: () => meQuery.refetch(),
     logout,
+    triggerRefetch,
   };
 }

@@ -14,7 +14,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const utils = trpc.useUtils();
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, triggerRefetch } = useAuth();
 
   // Si ya está autenticado, redirigir al dashboard
   useEffect(() => {
@@ -22,13 +22,23 @@ export default function Login() {
       setLocation("/dashboard");
     }
   }, [isAuthenticated, loading, setLocation]);
+  
+  // Trigger refetch cuando se carga la página de login (en caso de que ya esté autenticado)
+  useEffect(() => {
+    triggerRefetch();
+  }, [triggerRefetch]);
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async () => {
       toast.success("¡Sesión iniciada correctamente!");
       // Invalidar el cache de auth.me para que se actualice
       await utils.auth.me.invalidate();
-      setLocation("/dashboard");
+      // Trigger refetch en el hook useAuth
+      triggerRefetch();
+      // Pequeño delay para asegurar que la cookie se haya establecido
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100);
     },
     onError: (error) => {
       toast.error(error.message || "Error al iniciar sesión");
