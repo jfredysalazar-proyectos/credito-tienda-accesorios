@@ -71,11 +71,26 @@ export async function processWhatsAppQueue() {
               .limit(1);
 
             if (client.length > 0) {
+              // Parsear messageContent: puede ser JSON {amount, paymentMethod, notes} o un número simple (legado)
+              let paymentAmount = 0;
+              let paymentMethod: string | undefined;
+              let paymentNotes: string | null = null;
+              try {
+                const parsed = JSON.parse(log.messageContent);
+                paymentAmount = Number(parsed.amount) || 0;
+                paymentMethod = parsed.paymentMethod || undefined;
+                paymentNotes = parsed.notes || null;
+              } catch {
+                // Formato legado: solo el monto como string
+                paymentAmount = Number(log.messageContent) || 0;
+              }
               messageContent = generatePaymentReceivedMessage(
                 client[0].name,
-                Number(log.messageContent) || 0, // El monto se pasa en messageContent temporalmente
+                paymentAmount,
                 Number(credit[0].balance),
-                credit[0].concept
+                credit[0].concept,
+                paymentMethod,
+                paymentNotes
               );
             }
           }

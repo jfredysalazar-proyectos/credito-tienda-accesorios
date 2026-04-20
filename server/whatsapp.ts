@@ -155,6 +155,22 @@ export function generateNewCreditMessage(
   return message;
 }
 
+const paymentMethodLabels: Record<string, string> = {
+  cash: 'Efectivo',
+  efectivo: 'Efectivo',
+  transfer: 'Transferencia',
+  transferencia: 'Transferencia',
+  check: 'Cheque',
+  cheque: 'Cheque',
+  credit_card: 'Tarjeta de Crédito',
+  debit_card: 'Tarjeta Débito',
+  general_payment: 'Pago General',
+  devolucion: 'Devolución',
+  saldo_favor: 'Saldo a Favor',
+  other: 'Otro',
+  otro: 'Otro',
+};
+
 /**
  * Generar mensaje de pago recibido
  */
@@ -162,13 +178,22 @@ export function generatePaymentReceivedMessage(
   clientName: string,
   amount: number,
   newBalance: number,
-  concept: string
+  concept: string,
+  paymentMethod?: string,
+  notes?: string | null
 ): string {
   let message = `💰 *Pago Recibido*\n\n`;
   message += `Hola ${clientName},\n\n`;
   message += `Hemos recibido tu pago:\n\n`;
   message += `*Concepto:* ${concept}\n`;
   message += `*Monto Pagado:* $${amount.toLocaleString("es-CO")}\n`;
+
+  if (paymentMethod) {
+    const methodLabel = paymentMethodLabels[paymentMethod] || paymentMethod;
+    const notesText = notes ? ` ${notes}` : '';
+    message += `*Forma de Pago:* ${methodLabel}${notesText}\n`;
+  }
+
   message += `*Saldo Pendiente:* $${newBalance.toLocaleString("es-CO")}\n\n`;
 
   if (newBalance === 0) {

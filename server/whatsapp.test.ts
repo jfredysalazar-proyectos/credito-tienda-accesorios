@@ -100,5 +100,51 @@ describe("WhatsApp Message Generation", () => {
       expect(message).toContain("500.000");
       expect(message).toContain("¡Crédito pagado completamente!");
     });
+
+    it("should include payment method label in message", () => {
+      const message = generatePaymentReceivedMessage(
+        "Luis Torres",
+        150000,
+        50000,
+        "Audifónos Sony",
+        "transferencia"
+      );
+
+      expect(message).toContain("Luis Torres");
+      expect(message).toContain("150.000");
+      expect(message).toContain("Transferencia");
+    });
+
+    it("should include payment method and notes in message", () => {
+      const message = generatePaymentReceivedMessage(
+        "Diana Mora",
+        80000,
+        20000,
+        "Cargador USB-C",
+        "transferencia",
+        "Bancolombia"
+      );
+
+      expect(message).toContain("Diana Mora");
+      expect(message).toContain("80.000");
+      expect(message).toContain("Transferencia");
+      expect(message).toContain("Bancolombia");
+    });
+
+    it("should show Saldo a Favor as payment method", () => {
+      const message = generatePaymentReceivedMessage(
+        "Carlos Vega",
+        200000,
+        0,
+        "Servicio de Formateo",
+        "saldo_favor",
+        "Servicio anterior"
+      );
+
+      expect(message).toContain("Carlos Vega");
+      expect(message).toContain("Saldo a Favor");
+      expect(message).toContain("Servicio anterior");
+      expect(message).toContain("¡Crédito pagado completamente!");
+    });
   });
 });

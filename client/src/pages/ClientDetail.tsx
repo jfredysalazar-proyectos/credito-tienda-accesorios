@@ -96,6 +96,19 @@ export default function ClientDetail() {
     },
   });
 
+  const paymentMethodLabels: Record<string, string> = {
+    efectivo: "Efectivo",
+    transferencia: "Transferencia",
+    cheque: "Cheque",
+    devolucion: "Devolución",
+    saldo_favor: "Saldo a Favor",
+    otro: "Otro",
+    cash: "Efectivo",
+    transfer: "Transferencia",
+    check: "Cheque",
+    other: "Otro",
+  };
+
   const createPaymentMutation = trpc.payments.create.useMutation({
     onSuccess: (data: any) => {
       toast.success("Pago registrado exitosamente");
@@ -109,11 +122,14 @@ export default function ClientDetail() {
       const amount = Number(data.amount || 0).toLocaleString("es-CO");
       const creditBalance = Number(data.newBalance || 0).toLocaleString("es-CO");
       const concept = data.concept || "tu crédito";
+      const methodLabel = paymentMethodLabels[data.paymentMethod] || data.paymentMethod || "";
+      const notesText = data.notes ? ` ${data.notes}` : "";
+      const paymentInfo = `${methodLabel}${notesText}`.trim();
       
       // Calcular el nuevo saldo total restando el abono del saldo total actual
       const newTotalBalance = Math.max(0, totalBalance - Number(data.amount || 0)).toLocaleString("es-CO");
       
-      const message = `Hola *${client?.name}*, hemos recibido tu pago de *$${amount}* para el crédito de *"${concept}"*.\n\n` +
+      const message = `Hola *${client?.name}*, hemos recibido tu Abono de Producto de *$${amount}* Por *${paymentInfo}* para el crédito de *"${concept}"*.\n\n` +
                       `✅ El nuevo saldo de este crédito es: *$${creditBalance}*\n` +
                       `🔴 Tu saldo de deuda total es: *$${newTotalBalance}*\n\n` +
                       `¡Muchas gracias por tu pago!`;
@@ -157,6 +173,7 @@ export default function ClientDetail() {
       toast.success("Pago general registrado exitosamente");
       setIsGeneralPaymentOpen(false);
       setGeneralPaymentAmount("");
+      setGeneralPaymentNotes("");
       void utils.credits.getByClientId.invalidate({ clientId });
       void utils.clients.getById.invalidate({ clientId });
       void utils.payments.getHistoryByClient.invalidate({ clientId });
@@ -164,8 +181,11 @@ export default function ClientDetail() {
       // Opción de enviar por WhatsApp
       const totalPaid = Number(data.totalPaid || 0);
       const remainingBalance = Math.max(0, totalBalance - totalPaid);
+      const methodLabel = paymentMethodLabels[generalPaymentMethod] || generalPaymentMethod || "";
+      const notesText = generalPaymentNotes ? ` ${generalPaymentNotes}` : "";
+      const paymentInfo = `${methodLabel}${notesText}`.trim();
       
-      const message = `Hola ${client?.name}, hemos recibido tu pago general de $${totalPaid.toLocaleString("es-CO")}. Tu saldo total adeudado ahora es de $${remainingBalance.toLocaleString("es-CO")}. ¡Muchas gracias!`;
+      const message = `Hola *${client?.name}*, hemos recibido tu Pago General de *$${totalPaid.toLocaleString("es-CO")}* Por *${paymentInfo}*.\n\n🔴 Tu saldo total adeudado ahora es de *$${remainingBalance.toLocaleString("es-CO")}*.\n\n¡Muchas gracias por tu pago!`;
       const url = `https://wa.me/${client?.whatsappNumber?.replace(/\D/g, "") || ""}?text=${encodeURIComponent(message)}`;
       
       toast("¿Deseas enviar el recibo por WhatsApp?", {
@@ -362,7 +382,7 @@ export default function ClientDetail() {
                 Este pago se distribuirá automáticamente entre los créditos activos.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+                     <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Saldo Total Adeudado</Label>
                 <div className="text-2xl font-bold text-red-600">
@@ -392,8 +412,11 @@ export default function ClientDetail() {
                     <SelectItem value="transfer">Transferencia</SelectItem>
                     <SelectItem value="check">Cheque</SelectItem>
                     <SelectItem value="devolucion">Devolución</SelectItem>
+                    <SelectItem value="saldo_favor">Saldo a Favor</SelectItem>
                     <SelectItem value="other">Otro</SelectItem>
                   </SelectContent>
+                </Select>
+              </div>       </SelectContent>
                 </Select>
               </div>
               <div>
@@ -740,6 +763,7 @@ function PaymentForm({ creditId, balance, onSubmit, isLoading }: any) {
             <SelectItem value="transferencia">Transferencia</SelectItem>
             <SelectItem value="cheque">Cheque</SelectItem>
             <SelectItem value="devolucion">Devolución</SelectItem>
+            <SelectItem value="saldo_favor">Saldo a Favor</SelectItem>
             <SelectItem value="otro">Otro</SelectItem>
           </SelectContent>
         </Select>

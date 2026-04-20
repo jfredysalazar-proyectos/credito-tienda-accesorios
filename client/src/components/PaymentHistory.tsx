@@ -47,22 +47,34 @@ interface PaymentHistoryProps {
 
 const paymentMethodLabels: Record<string, string> = {
   cash: "Efectivo",
+  efectivo: "Efectivo",
   transfer: "Transferencia",
+  transferencia: "Transferencia",
   check: "Cheque",
+  cheque: "Cheque",
   credit_card: "Tarjeta de Crédito",
   debit_card: "Tarjeta Débito",
   general_payment: "Pago General",
+  devolucion: "Devolución",
+  saldo_favor: "Saldo a Favor",
   other: "Otro",
+  otro: "Otro",
 };
 
 const paymentMethodColors: Record<string, string> = {
   cash: "bg-green-100 text-green-800",
+  efectivo: "bg-green-100 text-green-800",
   transfer: "bg-blue-100 text-blue-800",
+  transferencia: "bg-blue-100 text-blue-800",
   check: "bg-purple-100 text-purple-800",
+  cheque: "bg-purple-100 text-purple-800",
   credit_card: "bg-orange-100 text-orange-800",
   debit_card: "bg-cyan-100 text-cyan-800",
   general_payment: "bg-indigo-100 text-indigo-800",
+  devolucion: "bg-yellow-100 text-yellow-800",
+  saldo_favor: "bg-teal-100 text-teal-800",
   other: "bg-gray-100 text-gray-800",
+  otro: "bg-gray-100 text-gray-800",
 };
 
 export default function PaymentHistory({ 
@@ -205,12 +217,18 @@ export default function PaymentHistory({
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
                 <SelectItem value="cash">Efectivo</SelectItem>
+                <SelectItem value="efectivo">Efectivo (alt)</SelectItem>
                 <SelectItem value="transfer">Transferencia</SelectItem>
+                <SelectItem value="transferencia">Transferencia (alt)</SelectItem>
                 <SelectItem value="check">Cheque</SelectItem>
+                <SelectItem value="cheque">Cheque (alt)</SelectItem>
                 <SelectItem value="credit_card">Tarjeta de Crédito</SelectItem>
                 <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
                 <SelectItem value="general_payment">Pago General</SelectItem>
+                <SelectItem value="devolucion">Devolución</SelectItem>
+                <SelectItem value="saldo_favor">Saldo a Favor</SelectItem>
                 <SelectItem value="other">Otro</SelectItem>
+                <SelectItem value="otro">Otro (alt)</SelectItem>
               </SelectContent>
             </Select>
           </div>

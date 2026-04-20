@@ -244,9 +244,9 @@ export const appRouter = router({
           });
         }
 
-        // Validar que el pago no sea mayor que el saldo
+        // Validar que el pago no sea mayor que el saldo (excepto Saldo a Favor)
         const currentBalance = Number(credit.balance);
-        if (input.amount > currentBalance) {
+        if (input.amount > currentBalance && input.paymentMethod !== 'saldo_favor') {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: `El pago no puede ser mayor que el saldo adeudado. Saldo: $${currentBalance.toLocaleString("es-CO")}, Pago: $${input.amount.toLocaleString("es-CO")}`,
@@ -274,13 +274,18 @@ export const appRouter = router({
         });
 
         // Crear log de WhatsApp para envío automático
-        // Guardar el monto en messageContent para que el worker lo use
+        // Guardar monto|método|notas en messageContent para que el worker lo use
+        const logContent = JSON.stringify({
+          amount: input.amount,
+          paymentMethod: input.paymentMethod,
+          notes: input.notes || null,
+        });
         await createWhatsappLog({
           clientId: credit.clientId,
           creditId: input.creditId,
           messageType: "payment_received",
           phoneNumber: client.whatsappNumber,
-          messageContent: input.amount.toString(),
+          messageContent: logContent,
           status: "pending",
         });
 
@@ -452,6 +457,7 @@ export const appRouter = router({
           'debit_card': 'Tarjeta Débito',
           'general_payment': 'Pago General',
           'devolucion': 'Devolución',
+          'saldo_favor': 'Saldo a Favor',
           'other': 'Otro',
           'otro': 'Otro'
         };
@@ -536,6 +542,7 @@ export const appRouter = router({
           'debit_card': 'Tarjeta Débito',
           'general_payment': 'Pago General',
           'devolucion': 'Devolución',
+          'saldo_favor': 'Saldo a Favor',
           'other': 'Otro',
           'otro': 'Otro'
         };

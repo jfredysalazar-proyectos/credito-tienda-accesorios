@@ -27,13 +27,18 @@ export async function generatePaymentHistoryPDF(client: any, history: any[], cre
       
       const paymentMethodMap: Record<string, string> = {
         'cash': 'Efectivo',
+        'efectivo': 'Efectivo',
         'transfer': 'Transferencia',
+        'transferencia': 'Transferencia',
         'check': 'Cheque',
+        'cheque': 'Cheque',
         'credit_card': 'Tarjeta de Crédito',
         'debit_card': 'Tarjeta Débito',
         'general_payment': 'Pago General',
         'devolucion': 'Devolución',
-        'other': 'Otro'
+        'saldo_favor': 'Saldo a Favor',
+        'other': 'Otro',
+        'otro': 'Otro'
       };
 
       // ============ ENCABEZADO CON MEMBRETE ============
