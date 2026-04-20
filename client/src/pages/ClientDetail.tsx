@@ -382,7 +382,7 @@ export default function ClientDetail() {
                 Este pago se distribuirá automáticamente entre los créditos activos.
               </DialogDescription>
             </DialogHeader>
-                     <div className="space-y-4 py-4">
+            <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Saldo Total Adeudado</Label>
                 <div className="text-2xl font-bold text-red-600">
@@ -415,8 +415,6 @@ export default function ClientDetail() {
                     <SelectItem value="saldo_favor">Saldo a Favor</SelectItem>
                     <SelectItem value="other">Otro</SelectItem>
                   </SelectContent>
-                </Select>
-              </div>       </SelectContent>
                 </Select>
               </div>
               <div>
